@@ -26,8 +26,8 @@
       }
     }, true);
     (function moveCursor() {
-      rx += (cx - rx) * 0.85;
-      ry += (cy - ry) * 0.85;
+      rx += (cx - rx) * 0.25;
+      ry += (cy - ry) * 0.25;
       cursor.style.transform = `translate(calc(${cx}px - 50%), calc(${cy}px - 50%))`;
       ring.style.transform = `translate(calc(${rx}px - 50%), calc(${ry}px - 50%))`;
       requestAnimationFrame(moveCursor);
@@ -498,6 +498,99 @@
         dlmStatus.textContent   = `> ACCESS DENIED: ${err.message}`;
         dlmStatus.style.color   = '#ff4444';
         dlmStatus.style.display = 'block';
+      }
+    });
+  }
+
+  // ─── HUB ACCESS MODAL ────────────────────────────────────────
+  const HUB_URL      = 'https://arunjitkcom.notion.site/Cyber-Security-Hub-c9062a39de4d4029b4637b81fcf939e6?source=copy_link';
+  const hubBtn       = document.getElementById('hub-access-btn');
+  const hubModal     = document.getElementById('hub-access-modal');
+  const hamClose     = document.getElementById('ham-close');
+  const hamForm      = document.getElementById('hub-access-form');
+  const hamStatus    = document.getElementById('ham-status');
+  const hamSubmit    = document.getElementById('ham-submit');
+
+  function openHubModal() {
+    if (hubModal) {
+      hubModal.classList.add('open');
+      setTimeout(() => { document.getElementById('ham-name')?.focus(); }, 50);
+    }
+  }
+
+  function closeHubModal() {
+    if (!hubModal) return;
+    hubModal.classList.remove('open');
+    if (hamForm)   hamForm.reset();
+    if (hamStatus) hamStatus.style.display = 'none';
+    if (hamSubmit) {
+      hamSubmit.textContent = '> [AUTHORIZE & ACCESS HUB]';
+      hamSubmit.style.color = '';
+      hamSubmit.disabled    = false;
+    }
+  }
+
+  if (hubBtn)   hubBtn.addEventListener('click', openHubModal);
+  if (hamClose) hamClose.addEventListener('click', closeHubModal);
+
+  if (hubModal) {
+    hubModal.addEventListener('click', e => {
+      if (e.target === hubModal) closeHubModal();
+    });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && hubModal?.classList.contains('open')) closeHubModal();
+  });
+
+  if (hamForm) {
+    hamForm.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const name  = document.getElementById('ham-name').value.trim();
+      const email = document.getElementById('ham-email').value.trim();
+
+      if (!name || !email) {
+        hamStatus.textContent   = '> ERROR: CALLSIGN AND RETURN ADDRESS ARE REQUIRED.';
+        hamStatus.style.color   = '#ff4444';
+        hamStatus.style.display = 'block';
+        return;
+      }
+
+      hamSubmit.disabled    = true;
+      hamSubmit.textContent = '> VERIFYING IDENTITY...';
+      hamStatus.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/hub-access', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ name, email }),
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch { /* ignore */ }
+
+        if (res.ok && data.success) {
+          hamSubmit.textContent   = '> AUTHORIZED ✓ — CONNECTING...';
+          hamSubmit.style.color   = 'var(--cyber-cyan)';
+          hamStatus.textContent   = '> ACCESS GRANTED. REDIRECTING TO CYBER SECURITY HUB...';
+          hamStatus.style.color   = 'var(--cyber-cyan)';
+          hamStatus.style.display = 'block';
+          setTimeout(() => {
+            window.open(HUB_URL, '_blank', 'noopener,noreferrer');
+            setTimeout(closeHubModal, 800);
+          }, 900);
+        } else {
+          throw new Error(data.error || 'Verification failed');
+        }
+      } catch (err) {
+        hamSubmit.textContent   = '> [AUTHORIZE & ACCESS HUB]';
+        hamSubmit.style.color   = '';
+        hamSubmit.disabled      = false;
+        hamStatus.textContent   = `> ACCESS DENIED: ${err.message}`;
+        hamStatus.style.color   = '#ff4444';
+        hamStatus.style.display = 'block';
       }
     });
   }

@@ -166,6 +166,74 @@ app.post('/api/download-lead', async (req, res) => {
   }
 });
 
+// ── /api/hub-access ───────────────────────────────────────────────────────────
+app.post('/api/hub-access', async (req, res) => {
+  const { name, email } = req.body || {};
+
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name and email are required.' });
+  }
+
+  // Resolve client IP (works behind proxies / Nginx)
+  const rawIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+             || req.socket.remoteAddress
+             || 'unknown';
+  const clientIp = rawIp.replace(/^::ffff:/, ''); // strip IPv4-mapped IPv6 prefix
+
+  // Geo-enrich the IP (skip loopback / private ranges)
+  let geo = {};
+  const isPrivate = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|localhost)/.test(clientIp);
+  if (!isPrivate && clientIp !== 'unknown') {
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${clientIp}?fields=status,country,regionName,city,isp,org,as,query`);
+      const geoData = await geoRes.json();
+      if (geoData.status === 'success') geo = geoData;
+    } catch (_) {}
+  }
+
+  const geoLine = geo.city
+    ? `📍 *Location:* ${geo.city}, ${geo.regionName}, ${geo.country}`
+    : `📍 *Location:* ${isPrivate ? 'Local / Private Network' : 'Unavailable'}`;
+
+  const ispLine  = geo.isp  ? `\n🌐 *ISP:* ${geo.isp}`      : '';
+  const orgLine  = geo.org  ? `\n🏢 *Org:* ${geo.org}`       : '';
+
+  try {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId   = process.env.TELEGRAM_CHAT_ID;
+    if (!botToken || !chatId) throw new Error('Telegram credentials not configured');
+
+    const text = [
+      '🔐 *Cyber Security Hub Access*',
+      '',
+      `👤 *Name:*  ${name}`,
+      `📧 *Email:* ${email}`,
+      '',
+      `🖥️ *IP:* \`${clientIp}\``,
+      geoLine + ispLine + orgLine,
+    ].join('\n');
+
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+      }
+    );
+
+    if (!tgRes.ok) {
+      const body = await tgRes.json();
+      throw new Error(body.description || 'Telegram API error');
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('[hub-access error]', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // ── LIVE CHAT ─────────────────────────────────────────────────────────────────
 const chatSessions = new Map(); // sessionId → { res (SSE), messages: [], name: '' }
 const msgToSession = new Map(); // telegramMsgId → sessionId
@@ -254,26 +322,11 @@ app.post('/api/chat/message', async (req, res) => {
   res.json({ success: true });
 });
 
-// Telegram webhook — receives owner's reply and routes to visitor via SSE
+// Telegram webhook — for production deployments with a public URL
 app.post('/api/telegram/webhook', (req, res) => {
-  res.status(200).end(); // Acknowledge immediately — Telegram requires fast ACK
-
-  const msg = req.body?.message;
-  if (!msg) return;
-
-  // Only handle replies to bot messages (owner replying to a chat notification)
-  if (!msg.reply_to_message) return;
-
-  const sessionId = msgToSession.get(msg.reply_to_message.message_id);
-  if (!sessionId) return;
-
-  const session = chatSessions.get(sessionId);
-  if (!session) return;
-
-  const msgObj = { from: 'owner', name: 'Arunjit', text: msg.text, ts: Date.now() };
-  session.messages.push(msgObj);
-
-  if (session.res) session.res.write(`data: ${JSON.stringify(msgObj)}\n\n`);
+  res.status(200).end();
+  const update = req.body;
+  if (update) routeTelegramUpdate(update);
 });
 
 // Convenience: register the Telegram webhook (call once after deployment)
@@ -300,7 +353,59 @@ app.get('*', (req, res) => {
 // ── START ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`[server] Running on http://localhost:${PORT}`);
+  startTelegramPolling();
 });
+
+// ── TELEGRAM LONG POLLING ─────────────────────────────────────────────────────
+// Works without a public URL — server actively fetches updates from Telegram.
+// If a webhook is registered for production, this co-exists: deleteWebhook first.
+function routeTelegramUpdate(update) {
+  const msg = update.message;
+  if (!msg || !msg.reply_to_message) return;
+
+  const sessionId = msgToSession.get(msg.reply_to_message.message_id);
+  if (!sessionId) return;
+
+  const session = chatSessions.get(sessionId);
+  if (!session) return;
+
+  const msgObj = { from: 'owner', name: 'Arunjit', text: msg.text, ts: Date.now() };
+  session.messages.push(msgObj);
+  if (session.res) session.res.write(`data: ${JSON.stringify(msgObj)}\n\n`);
+}
+
+async function startTelegramPolling() {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) { console.log('[telegram] No token — polling disabled'); return; }
+
+  // Remove any registered webhook so getUpdates isn't blocked with 409
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/deleteWebhook`);
+  } catch (_) {}
+
+  let offset = 0;
+
+  async function poll() {
+    try {
+      const r = await fetch(
+        `https://api.telegram.org/bot${botToken}/getUpdates?offset=${offset}&timeout=30&allowed_updates=%5B%22message%22%5D`
+      );
+      const data = await r.json();
+      if (data.ok && data.result.length) {
+        for (const update of data.result) {
+          offset = update.update_id + 1;
+          routeTelegramUpdate(update);
+        }
+      }
+    } catch (err) {
+      console.error('[telegram poll]', err.message);
+      await new Promise(r => setTimeout(r, 5000)); // back off on network error
+    }
+    poll(); // tail-recurse immediately — timeout=30 means this blocks for up to 30s
+  }
+
+  poll();
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function escapeHtml(str) {

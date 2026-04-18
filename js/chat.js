@@ -30,6 +30,9 @@
 
   // ─── Open / close ─────────────────────────────────────────────────────────
 
+  // Expose so nav / contact buttons can trigger the widget
+  window.openChatWidget = openChat;
+
   function openChat() {
     isOpen = true;
     win.classList.add('open');
