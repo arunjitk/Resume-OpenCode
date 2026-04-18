@@ -914,5 +914,46 @@
   <!-- Core scripts -->
   <script src="js/rain.js"></script>
   <script src="js/animations.js"></script>
+
+  <!-- ═══ LIVE CHAT WIDGET ═══ -->
+  <button id="chat-fab" class="chat-fab" aria-label="Open live chat" aria-expanded="false">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <span id="chat-badge" class="chat-badge" aria-live="polite" aria-label="Unread messages"></span>
+  </button>
+
+  <div id="chat-window" class="chat-window" role="dialog" aria-label="Live chat" aria-modal="true" aria-hidden="true">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <span class="chat-status-dot" aria-hidden="true"></span>
+        <span class="chat-header-title">&gt; LIVE UPLINK</span>
+        <span class="chat-online-label">ONLINE</span>
+      </div>
+      <button id="chat-close" class="chat-close-btn" aria-label="Close chat">[ESC]</button>
+    </div>
+
+    <!-- Name capture (shown first visit) -->
+    <div id="chat-name-overlay" class="chat-name-overlay">
+      <div class="chat-name-box">
+        <div class="chat-name-title">&gt; IDENTIFY YOURSELF, OPERATOR</div>
+        <div class="chat-name-sub">Enter your name to begin secure uplink</div>
+        <input type="text" id="chat-name-input" class="form-input" placeholder="Your name..." maxlength="40" autocomplete="name" />
+        <button id="chat-name-submit" class="transmit-btn" style="margin-top:0.5rem;font-size:0.75rem;padding:0.5rem 1rem">&gt; [CONNECT]</button>
+      </div>
+    </div>
+
+    <div id="chat-messages" class="chat-messages" aria-live="polite" aria-label="Chat messages"></div>
+
+    <div class="chat-input-row">
+      <span class="chat-prompt" aria-hidden="true">&gt;</span>
+      <input type="text" id="chat-input" class="chat-input-field" placeholder="Type message... (Enter to send)" maxlength="500" aria-label="Chat message" />
+      <button id="chat-send" class="chat-send-btn" aria-label="Send message">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="js/chat.js"></script>
 </body>
 </html>

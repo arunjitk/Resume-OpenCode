@@ -166,6 +166,132 @@ app.post('/api/download-lead', async (req, res) => {
   }
 });
 
+// ── LIVE CHAT ─────────────────────────────────────────────────────────────────
+const chatSessions = new Map(); // sessionId → { res (SSE), messages: [], name: '' }
+const msgToSession = new Map(); // telegramMsgId → sessionId
+
+// Purge idle sessions older than 24 h
+setInterval(() => {
+  const expiry = Date.now() - 24 * 60 * 60 * 1000;
+  chatSessions.forEach((s, id) => {
+    if ((s.messages.at(-1)?.ts || 0) < expiry && !s.res) chatSessions.delete(id);
+  });
+}, 60 * 60 * 1000);
+
+// SSE stream — visitor subscribes for real-time messages
+app.get('/api/chat/events', (req, res) => {
+  const { sessionId } = req.query;
+  if (!sessionId) return res.status(400).end();
+
+  res.writeHead(200, {
+    'Content-Type':      'text/event-stream',
+    'Cache-Control':     'no-cache',
+    'Connection':        'keep-alive',
+    'X-Accel-Buffering': 'no',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.flushHeaders();
+
+  if (!chatSessions.has(sessionId)) {
+    chatSessions.set(sessionId, { res, messages: [], name: 'Visitor' });
+  } else {
+    chatSessions.get(sessionId).res = res;
+  }
+
+  // Replay existing messages so a reconnected tab sees history
+  chatSessions.get(sessionId).messages.forEach(m =>
+    res.write(`data: ${JSON.stringify(m)}\n\n`)
+  );
+
+  const heartbeat = setInterval(() => res.write(':ping\n\n'), 25000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    if (chatSessions.has(sessionId)) chatSessions.get(sessionId).res = null;
+  });
+});
+
+// Visitor → server → Telegram
+app.post('/api/chat/message', async (req, res) => {
+  const { sessionId, name, message } = req.body || {};
+  if (!sessionId || !String(message || '').trim()) {
+    return res.status(400).json({ error: 'sessionId and message required' });
+  }
+
+  if (!chatSessions.has(sessionId)) {
+    chatSessions.set(sessionId, { res: null, messages: [], name: name || 'Visitor' });
+  }
+  const session = chatSessions.get(sessionId);
+  if (name) session.name = name;
+
+  const msgObj = { from: 'visitor', name: session.name, text: message, ts: Date.now() };
+  session.messages.push(msgObj);
+
+  try {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId   = process.env.TELEGRAM_CHAT_ID;
+    if (!botToken || !chatId) throw new Error('Telegram not configured');
+
+    const tgText = [
+      `💬 <b>Live Chat</b> [${sessionId.slice(0, 8)}]`,
+      `👤 <b>${escapeHtml(session.name)}</b>`,
+      '',
+      escapeHtml(message),
+      '',
+      '<i>↩ Reply to this message to respond in chat</i>',
+    ].join('\n');
+
+    const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ chat_id: chatId, text: tgText, parse_mode: 'HTML' }),
+    });
+    const tgJson = await tgRes.json();
+    if (tgJson.ok) msgToSession.set(tgJson.result.message_id, sessionId);
+  } catch (err) {
+    console.error('[chat telegram]', err.message);
+  }
+
+  res.json({ success: true });
+});
+
+// Telegram webhook — receives owner's reply and routes to visitor via SSE
+app.post('/api/telegram/webhook', (req, res) => {
+  res.status(200).end(); // Acknowledge immediately — Telegram requires fast ACK
+
+  const msg = req.body?.message;
+  if (!msg) return;
+
+  // Only handle replies to bot messages (owner replying to a chat notification)
+  if (!msg.reply_to_message) return;
+
+  const sessionId = msgToSession.get(msg.reply_to_message.message_id);
+  if (!sessionId) return;
+
+  const session = chatSessions.get(sessionId);
+  if (!session) return;
+
+  const msgObj = { from: 'owner', name: 'Arunjit', text: msg.text, ts: Date.now() };
+  session.messages.push(msgObj);
+
+  if (session.res) session.res.write(`data: ${JSON.stringify(msgObj)}\n\n`);
+});
+
+// Convenience: register the Telegram webhook (call once after deployment)
+app.get('/api/telegram/set-webhook', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'url query param required' });
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN not set' });
+
+  const r = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ url: `${url}/api/telegram/webhook` }),
+  });
+  const data = await r.json();
+  res.json(data);
+});
+
 // ── FALLBACK — serve index.html for any unmatched route ───────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
