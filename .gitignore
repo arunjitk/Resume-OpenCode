@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# environment variables — NEVER commit these
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+
+# Vercel
+.vercel
+
+# Logs
+*.log
+/tmp/
+
+# Local deploy script (has hardcoded IPs)
+deploy.sh

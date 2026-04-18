@@ -1,0 +1,59 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /var/www/resume
+
+            # Pull latest code
+            git pull origin main
+
+            # Install production dependencies
+            npm install --omit=dev
+
+            # Build frontend on the server
+            npm run build
+
+            # Copy .env if it doesn't exist (first deploy safety check)
+            if [ ! -f .env ]; then
+              echo "WARNING: .env file not found on server. Add it manually."
+            fi
+
+            # Restart app
+            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
+            pm2 save
+
+      - name: Notify success
+        if: success()
+        run: echo "Deployed successfully to https://arunjitk.org"
