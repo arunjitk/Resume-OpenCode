@@ -110,6 +110,29 @@ app.post('/api/contact', async (req, res) => {
     return res.status(400).json({ error: 'Name, email, and message are required.' });
   }
 
+  // Resolve client IP
+  const rawIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+             || req.socket.remoteAddress
+             || 'unknown';
+  const clientIp = rawIp.replace(/^::ffff:/, '');
+
+  // Geo-enrich the IP
+  let geo = {};
+  const isPrivate = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|localhost)/.test(clientIp);
+  if (!isPrivate && clientIp !== 'unknown') {
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${clientIp}?fields=status,country,regionName,city,isp,org,as,query`);
+      const geoData = await geoRes.json();
+      if (geoData.status === 'success') geo = geoData;
+    } catch (_) {}
+  }
+
+  const geoLine = geo.city
+    ? `📍 *Location:* ${geo.city}, ${geo.regionName}, ${geo.country}`
+    : `📍 *Location:* ${isPrivate ? 'Local / Private Network' : 'Unavailable'}`;
+  const ispLine  = geo.isp  ? `\n🌐 *ISP:* ${geo.isp}`      : '';
+  const orgLine  = geo.org  ? `\n🏢 *Org:* ${geo.org}`       : '';
+
   const results = { email: false, telegram: false };
   const errors  = [];
 
@@ -154,6 +177,19 @@ app.post('/api/contact', async (req, res) => {
               ${escapeHtml(message)}
             </div>
           </div>
+          <hr style="border:none;border-top:1px solid #00ff4133;margin:16px 0;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;color:#888;">
+            <tr>
+              <td style="padding:4px 0;vertical-align:top;">IP</td>
+              <td style="padding:4px 0;color:#e0e0e0;">${escapeHtml(clientIp)}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;vertical-align:top;">Location</td>
+              <td style="padding:4px 0;color:#e0e0e0;">${geo.city ? `${geo.city}, ${geo.regionName}, ${geo.country}` : (isPrivate ? 'Local / Private Network' : 'Unavailable')}</td>
+            </tr>
+            ${geo.isp ? `<tr><td style="padding:4px 0;vertical-align:top;">ISP</td><td style="padding:4px 0;color:#e0e0e0;">${escapeHtml(geo.isp)}</td></tr>` : ''}
+            ${geo.org ? `<tr><td style="padding:4px 0;vertical-align:top;">Org</td><td style="padding:4px 0;color:#e0e0e0;">${escapeHtml(geo.org)}</td></tr>` : ''}
+          </table>
         </div>
       `,
     });
@@ -180,6 +216,9 @@ app.post('/api/contact', async (req, res) => {
       '',
       '💬 *Message:*',
       message,
+      '',
+      `🖥️ *IP:* \`${clientIp}\``,
+      geoLine + ispLine + orgLine,
     ].join('\n');
 
     const tgRes = await fetch(
@@ -217,6 +256,29 @@ app.post('/api/download-lead', async (req, res) => {
     return res.status(400).json({ error: 'Name and email are required.' });
   }
 
+  // Resolve client IP
+  const rawIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+             || req.socket.remoteAddress
+             || 'unknown';
+  const clientIp = rawIp.replace(/^::ffff:/, '');
+
+  // Geo-enrich the IP
+  let geo = {};
+  const isPrivate = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|localhost)/.test(clientIp);
+  if (!isPrivate && clientIp !== 'unknown') {
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${clientIp}?fields=status,country,regionName,city,isp,org,as,query`);
+      const geoData = await geoRes.json();
+      if (geoData.status === 'success') geo = geoData;
+    } catch (_) {}
+  }
+
+  const geoLine = geo.city
+    ? `📍 *Location:* ${geo.city}, ${geo.regionName}, ${geo.country}`
+    : `📍 *Location:* ${isPrivate ? 'Local / Private Network' : 'Unavailable'}`;
+  const ispLine  = geo.isp  ? `\n🌐 *ISP:* ${geo.isp}`      : '';
+  const orgLine  = geo.org  ? `\n🏢 *Org:* ${geo.org}`       : '';
+
   try {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId   = process.env.TELEGRAM_CHAT_ID;
@@ -228,6 +290,9 @@ app.post('/api/download-lead', async (req, res) => {
         `👤 *Name:*  ${name}`,
         `📧 *Email:* ${email}`,
         `📱 *Phone:* ${phone || '—'}`,
+        '',
+        `🖥️ *IP:* \`${clientIp}\``,
+        geoLine + ispLine + orgLine,
       ].join('\n');
 
       const tgRes = await fetch(

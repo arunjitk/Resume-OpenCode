@@ -19,6 +19,29 @@ module.exports = async function handler(req, res) {
       .json({ error: 'Name, email, and message are required.' });
   }
 
+  // Resolve client IP
+  const rawIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+             || req.socket.remoteAddress
+             || 'unknown';
+  const clientIp = rawIp.replace(/^::ffff:/, '');
+
+  // Geo-enrich the IP
+  let geo = {};
+  const isPrivate = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|localhost)/.test(clientIp);
+  if (!isPrivate && clientIp !== 'unknown') {
+    try {
+      const geoRes = await fetch(`http://ip-api.com/json/${clientIp}?fields=status,country,regionName,city,isp,org,as,query`);
+      const geoData = await geoRes.json();
+      if (geoData.status === 'success') geo = geoData;
+    } catch (_) {}
+  }
+
+  const geoLine = geo.city
+    ? `📍 *Location:* ${geo.city}, ${geo.regionName}, ${geo.country}`
+    : `📍 *Location:* ${isPrivate ? 'Local / Private Network' : 'Unavailable'}`;
+  const ispLine  = geo.isp  ? `\n🌐 *ISP:* ${geo.isp}`      : '';
+  const orgLine  = geo.org  ? `\n🏢 *Org:* ${geo.org}`       : '';
+
   const results = { email: false, telegram: false };
   const errors  = [];
 
@@ -93,6 +116,9 @@ module.exports = async function handler(req, res) {
       '',
       '💬 *Message:*',
       message,
+      '',
+      `🖥️ *IP:* \`${clientIp}\``,
+      geoLine + ispLine + orgLine,
     ].join('\n');
 
     const tgRes = await fetch(
