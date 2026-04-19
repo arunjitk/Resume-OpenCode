@@ -89,6 +89,16 @@
 
   // ─── SSE connection ───────────────────────────────────────────────────────
 
+  function setStatus(state) {
+    // state: 'connecting' | 'live' | 'reconnecting'
+    const bar = document.getElementById('chat-status-bar');
+    if (!bar) return;
+    const labels = { connecting: '> ESTABLISHING UPLINK...', live: '> SECURE UPLINK ACTIVE', reconnecting: '> RECONNECTING...' };
+    const colors = { connecting: 'var(--cyber-cyan)', live: 'var(--matrix-green)', reconnecting: 'var(--neon-magenta)' };
+    bar.textContent  = labels[state] || '';
+    bar.style.color  = colors[state] || 'var(--text-dim)';
+  }
+
   function connectSSE() {
     // Do not tear down a healthy connection. The browser auto-reconnects SSE
     // on its own; constantly closing+reopening causes a server-side race where
@@ -96,7 +106,12 @@
     // session.res and silencing all subsequent replies.
     if (evtSource && evtSource.readyState !== EventSource.CLOSED) return;
 
+    setStatus('connecting');
     evtSource = new EventSource(`/api/chat/events?sessionId=${encodeURIComponent(sessionId)}`);
+
+    evtSource.onopen = () => {
+      setStatus('live');
+    };
 
     evtSource.onmessage = e => {
       try {
@@ -111,7 +126,9 @@
     };
 
     evtSource.onerror = () => {
-      // Browser auto-reconnects SSE; no manual retry needed
+      // Browser auto-reconnects SSE automatically after a short delay.
+      // Show a status indicator so the user knows a reconnect is in progress.
+      setStatus('reconnecting');
     };
   }
 

@@ -8,7 +8,9 @@ const fs      = require('fs');
 const { Resend } = require('resend');
 
 // ── PERSIST msgToSession across restarts ────────────────────────────────────
-const MSG_MAP_FILE = path.join(__dirname, '.msg-session-map.json');
+const MSG_MAP_FILE     = path.join(__dirname, '.msg-session-map.json');
+const OFFSET_FILE      = path.join(__dirname, '.telegram-offset.json');
+const SESSIONS_FILE    = path.join(__dirname, '.chat-sessions.json');
 
 function loadMsgMap() {
   try {
@@ -32,6 +34,59 @@ function saveMsgMap() {
   fs.writeFileSync(MSG_MAP_FILE, JSON.stringify(obj), 'utf8');
 }
 
+// ── PERSIST polling offset so restarts don't re-deliver old updates ──────────
+function loadOffset() {
+  try {
+    const raw = fs.readFileSync(OFFSET_FILE, 'utf8');
+    return JSON.parse(raw).offset || 0;
+  } catch (_) { return 0; }
+}
+
+function saveOffset(val) {
+  try { fs.writeFileSync(OFFSET_FILE, JSON.stringify({ offset: val }), 'utf8'); }
+  catch (_) {}
+}
+
+// ── PERSIST chat session messages so history survives restarts ───────────────
+function loadSessions() {
+  try {
+    const raw    = fs.readFileSync(SESSIONS_FILE, 'utf8');
+    const obj    = JSON.parse(raw);
+    const expiry = Date.now() - 24 * 60 * 60 * 1000;
+    const result = new Map();
+    for (const [sid, data] of Object.entries(obj)) {
+      const msgs = (data.messages || []).filter(m => (m.ts || 0) > expiry);
+      if (msgs.length) result.set(sid, { res: null, messages: msgs, name: data.name || 'Visitor' });
+    }
+    console.log(`[chat] restored ${result.size} session(s) from disk`);
+    return result;
+  } catch (_) { return new Map(); }
+}
+
+function saveSessions() {
+  try {
+    const obj = {};
+    chatSessions.forEach((s, sid) => {
+      if (s.messages.length) obj[sid] = { messages: s.messages, name: s.name };
+    });
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(obj), 'utf8');
+  } catch (_) {}
+}
+
+// ── Safe SSE write — returns false and nulls session.res on failure ──────────
+function sseWrite(session, data) {
+  if (!session || !session.res) return false;
+  try {
+    if (!session.res.writable) { session.res = null; return false; }
+    const ok = session.res.write(data);
+    return ok;
+  } catch (err) {
+    console.error('[SSE write error]', err.message);
+    session.res = null;
+    return false;
+  }
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
@@ -41,6 +96,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve built static files
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Serve non-bundled source directories (js, css, ResumePDF) from project root
+app.use('/js',        express.static(path.join(__dirname, 'js')));
+app.use('/css',       express.static(path.join(__dirname, 'css')));
+app.use('/ResumePDF', express.static(path.join(__dirname, 'ResumePDF')));
 
 // ── /api/contact ─────────────────────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
@@ -328,23 +388,30 @@ app.post('/api/sim-access', async (req, res) => {
 });
 
 // ── LIVE CHAT ─────────────────────────────────────────────────────────────────
-const chatSessions = new Map(); // sessionId → { res (SSE), messages: [], name: '' }
+// sessionId → { res (SSE), messages: [], name: '' }
+// Restored from disk so history and queued replies survive server restarts.
+const chatSessions = loadSessions();
 
 // Persist telegram msgId → sessionId mapping across restarts
 const msgToSession = loadMsgMap();
 
-// Purge idle sessions older than 24 h
+// Purge idle sessions older than 24 h and persist
 setInterval(() => {
   const expiry = Date.now() - 24 * 60 * 60 * 1000;
   chatSessions.forEach((s, id) => {
     if ((s.messages.at(-1)?.ts || 0) < expiry && !s.res) chatSessions.delete(id);
   });
+  saveSessions();
 }, 60 * 60 * 1000);
 
 // SSE stream — visitor subscribes for real-time messages
 app.get('/api/chat/events', (req, res) => {
   const { sessionId } = req.query;
   if (!sessionId) return res.status(400).end();
+
+  // Disable Nagle's algorithm — ensures small SSE frames are sent immediately
+  // instead of being buffered waiting for larger TCP segments.
+  if (req.socket) req.socket.setNoDelay(true);
 
   res.writeHead(200, {
     'Content-Type':      'text/event-stream',
@@ -365,11 +432,17 @@ app.get('/api/chat/events', (req, res) => {
   // The browser automatically sends this header with the last `id:` value it
   // received, so we only resend messages newer than that point.
   const lastId = parseInt(req.headers['last-event-id'] || '0', 10);
-  chatSessions.get(sessionId).messages
+  const session = chatSessions.get(sessionId);
+  session.messages
     .filter(m => (m.ts || 0) > lastId)
-    .forEach(m => res.write(`id: ${m.ts}\ndata: ${JSON.stringify(m)}\n\n`));
+    .forEach(m => {
+      try { res.write(`id: ${m.ts}\ndata: ${JSON.stringify(m)}\n\n`); } catch (_) {}
+    });
 
-  const heartbeat = setInterval(() => res.write(':ping\n\n'), 25000);
+  const heartbeat = setInterval(() => {
+    try { if (res.writable) res.write(':ping\n\n'); } catch (_) {}
+  }, 25000);
+
   req.on('close', () => {
     clearInterval(heartbeat);
     // Only null the session's res if it's still pointing to THIS connection.
@@ -499,10 +572,15 @@ function routeTelegramUpdate(update) {
 
   const msgObj = { from: 'owner', name: 'Arunjit K', text: msg.text, ts: Date.now() };
   session.messages.push(msgObj);
+  saveSessions(); // persist so queued replies survive the next restart
 
   if (session.res) {
-    session.res.write(`id: ${msgObj.ts}\ndata: ${JSON.stringify(msgObj)}\n\n`);
-    console.log(`[tg] pushed reply to live SSE session=${sessionId.slice(0,8)}`);
+    const sent = sseWrite(session, `id: ${msgObj.ts}\ndata: ${JSON.stringify(msgObj)}\n\n`);
+    if (sent) {
+      console.log(`[tg] pushed reply to live SSE session=${sessionId.slice(0,8)}`);
+    } else {
+      console.log(`[tg] SSE write failed for session=${sessionId.slice(0,8)} — reply queued for reconnect`);
+    }
   } else {
     console.log(`[tg] session=${sessionId.slice(0,8)} has no active SSE — reply queued for reconnect`);
   }
@@ -525,13 +603,28 @@ async function startTelegramPolling() {
   // Fallback long-polling (only if no webhook is set)
   console.log('[telegram] No webhook found — starting long-poll fallback...');
 
-  let offset = 0;
+  // Resume from persisted offset so restarts don't re-deliver old updates
+  let offset = loadOffset();
+  console.log(`[telegram] polling from offset=${offset}`);
 
   async function poll() {
     try {
-      const r = await fetch(
-        `https://api.telegram.org/bot${botToken}/getUpdates?offset=${offset}&timeout=25&allowed_updates=%5B%22message%22%5D`
-      );
+      // Client-side timeout slightly longer than Telegram's server-side timeout=25.
+      // Without this, if the network silently drops the fetch hangs indefinitely
+      // (until TCP keepalive kills it — potentially minutes), blocking all replies.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 35000);
+
+      let r;
+      try {
+        r = await fetch(
+          `https://api.telegram.org/bot${botToken}/getUpdates?offset=${offset}&timeout=25&allowed_updates=%5B%22message%22%5D`,
+          { signal: controller.signal }
+        );
+      } finally {
+        clearTimeout(timer);
+      }
+
       const data = await r.json();
       if (data.ok && data.result.length) {
         console.log(`[telegram] ${data.result.length} update(s) received`);
@@ -539,10 +632,18 @@ async function startTelegramPolling() {
           offset = update.update_id + 1;
           routeTelegramUpdate(update);
         }
+        // Persist the new offset so a server restart continues from here,
+        // not from 0 (which would re-deliver already-processed updates).
+        saveOffset(offset);
       }
     } catch (err) {
-      console.error('[telegram poll]', err.message, err.cause?.message || '');
-      await new Promise(r => setTimeout(r, 5000));
+      if (err.name === 'AbortError') {
+        // Expected: 35 s client-side timeout — just retry immediately
+        console.log('[telegram poll] timeout — retrying');
+      } else {
+        console.error('[telegram poll]', err.message, err.cause?.message || '');
+        await new Promise(r => setTimeout(r, 5000));
+      }
     }
     poll();
   }
