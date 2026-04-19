@@ -19,6 +19,7 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/sim.css" />
 
   <!-- JSON-LD -->
   <script type="application/ld+json">
@@ -61,7 +62,9 @@
       <li><a href="#awards">[COMMENDATIONS]</a></li>
       <li><a href="#download">[EXTRACT]</a></li>
       <li><a href="#knowledge-base">[INTEL HUB]</a></li>
+      <li><a href="#attack-sim">[SIM]</a></li>
       <li><a href="#contact">[UPLINK]</a></li>
+
     </ul>
     <a href="https://chat.arunjitk.xyz/" target="_blank" rel="noopener" class="nav-ai-btn" aria-label="Open AI Chat">
       <span class="nav-chat-dot" aria-hidden="true"></span>
@@ -90,6 +93,8 @@
       <li><a href="#awards">7. COMMENDATIONS</a></li>
       <li><a href="#download">8. EXTRACT</a></li>
       <li><a href="#knowledge-base">8B. INTEL HUB</a></li>
+      <li><a href="#attack-sim">8C. ATK SIM</a></li>
+
       <li><a href="#contact">9. UPLINK</a></li>
       <li>
         <a href="https://chat.arunjitk.xyz/" target="_blank" rel="noopener" class="mobile-ai-btn" aria-label="Open AI Chat">
@@ -142,10 +147,10 @@
 ██║  ██║██║  ██║╚██████╔╝██║ ╚████║╚█████╔╝██║   ██║     ██║  ██╗
 ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝ ╚════╝ ╚═╝   ╚═╝     ╚═╝  ╚═╝</pre>
 
-        <div class="hero-role-line">&gt; ROLE: <span style="color:var(--cyber-cyan)">Senior Security Analyst III</span></div>
+        <div class="hero-role-line">&gt; ROLE: <span style="color:var(--cyber-cyan)" data-term="hero-tagline">Senior Security Analyst III</span></div>
         <div class="hero-role-line">&gt; LOCATION: <span style="color:var(--text-primary)">Bangalore, India</span></div>
         <div class="hero-role-line">&gt; CLEARANCE: <span style="color:var(--neon-magenta)">Level 8+</span></div>
-        <div class="hero-role-line">&gt; STATUS: <span style="color:var(--matrix-green); animation: blink 1s step-end infinite; display:inline-block">ACTIVE</span></div>
+        <div class="hero-role-line">&gt; STATUS: <span style="color:var(--matrix-green); animation: blink 1s step-end infinite; display:inline-block" data-term="hero-status">ACTIVE</span></div>
 
         <p class="hero-typing" aria-live="polite" style="margin-top:1.5rem"></p>
       </div>
@@ -173,12 +178,12 @@
          SECTION 2 — DOSSIER
     ════════════════════════════════════ -->
     <section id="dossier" class="section">
-      <div class="section-label">// OPERATOR FILE</div>
-      <h2 class="section-title" data-text="CLASSIFIED DOSSIER">CLASSIFIED DOSSIER</h2>
+      <div class="section-label" data-term="dossier-eyebrow">// OPERATOR FILE</div>
+      <h2 class="section-title" data-text="CLASSIFIED DOSSIER" data-term="dossier-label">CLASSIFIED DOSSIER</h2>
 
       <div class="hud-panel dossier-panel reveal">
         <div class="dossier-header">
-          <span class="classified-label">■ CLASSIFIED</span> — OPERATOR DOSSIER — CLEARANCE: TOP SECRET ■
+          <span class="classified-label" data-term="dossier-stamp">■ CLASSIFIED</span> — OPERATOR DOSSIER — CLEARANCE: TOP SECRET ■
         </div>
         <div class="dossier-body">
           <p id="dossier-text">Senior Security Analyst with 8+ years of experience specializing in Threat Hunting, Incident Response, and Cloud Security. Proven ability to bridge OSINT expertise with proactive hunting strategies to mitigate sophisticated threats. Dedicated to securing complex enterprise environments through expert-level technical analysis and robust incident management.</p>
@@ -198,8 +203,17 @@
          SECTION 3 — EXPERIENCE
     ════════════════════════════════════ -->
     <section id="experience" class="section">
-      <div class="section-label">// MISSION LOG</div>
-      <h2 class="section-title" data-text="WORK EXPERIENCE">WORK EXPERIENCE</h2>
+      <div class="section-label" data-term="experience-eyebrow">// MISSION LOG</div>
+      <h2 class="section-title" data-text="WORK EXPERIENCE" data-term="experience-label">WORK EXPERIENCE</h2>
+
+      <!-- ── CAREER GANTT CHART ──────────────────────────────── -->
+      <div class="hud-panel career-gantt-panel reveal" aria-label="Career progression chart">
+        <div class="gantt-panel-header">
+          <span class="gantt-panel-label">// CAREER PROGRESSION GRAPH</span>
+          <span class="gantt-panel-hint">Click a role bar to expand mission briefing</span>
+        </div>
+        <div id="career-gantt-wrap" class="career-gantt-wrap"></div>
+      </div>
 
       <div class="timeline" role="list">
         <div class="timeline-line" aria-hidden="true"></div>
@@ -315,8 +329,8 @@
          SECTION 4 — SKILLS MATRIX
     ════════════════════════════════════ -->
     <section id="skills" class="section">
-      <div class="section-label">// THREAT ARSENAL</div>
-      <h2 class="section-title" data-text="SKILLS MATRIX">SKILLS MATRIX</h2>
+      <div class="section-label" data-term="skills-eyebrow">// THREAT ARSENAL</div>
+      <h2 class="section-title" data-text="SKILLS MATRIX" data-term="skills-label">SKILLS MATRIX</h2>
 
       <div class="skills-container">
         <!-- Filter bar -->
@@ -331,6 +345,32 @@
           <button class="filter-btn" data-cat="devops">DEVOPS</button>
           <button class="filter-btn" data-cat="programming">CODE</button>
           <button class="filter-btn" data-cat="ai">AI/LLM</button>
+        </div>
+
+        <!-- ── SKILL RADAR CHART ─────────────────────────────── -->
+        <div id="skill-radar-container" class="hud-panel skill-radar-panel reveal" aria-label="Skill proficiency radar chart">
+          <div class="radar-panel-header">
+            <span class="radar-panel-label">// PROFICIENCY RADAR — DOMAIN EXPERTISE MAPPING</span>
+            <div class="radar-legend">
+              <span class="radar-legend-item"><span style="color:#00FF41">■</span> THREAT INTEL / IR</span>
+              <span class="radar-legend-item"><span style="color:#00F0FF">■</span> CLOUD / NETWORK</span>
+              <span class="radar-legend-item"><span style="color:#FF1744">■</span> EDR / ENDPOINT</span>
+              <span class="radar-legend-item"><span style="color:#FF00FF">■</span> SOAR / AUTOMATION</span>
+            </div>
+          </div>
+          <div class="radar-chart-wrap">
+            <canvas id="skill-radar-canvas" role="img" aria-label="Skill proficiency radar chart showing 8 security domains"></canvas>
+          </div>
+          <div class="radar-domain-badges" aria-hidden="true">
+            <span class="radar-badge" style="--badge-color:#00FF41">THREAT HUNTING 95%</span>
+            <span class="radar-badge" style="--badge-color:#00FF41">INCIDENT RESPONSE 92%</span>
+            <span class="radar-badge" style="--badge-color:#00F0FF">SIEM / XDR 90%</span>
+            <span class="radar-badge" style="--badge-color:#FF1744">EDR / ENDPOINT 88%</span>
+            <span class="radar-badge" style="--badge-color:#00F0FF">CLOUD SECURITY 85%</span>
+            <span class="radar-badge" style="--badge-color:#00FF41">DIGITAL FORENSICS 82%</span>
+            <span class="radar-badge" style="--badge-color:#00F0FF">NETWORK SECURITY 80%</span>
+            <span class="radar-badge" style="--badge-color:#FF00FF">SOAR / AUTOMATION 72%</span>
+          </div>
         </div>
 
         <!-- Three.js sphere -->
@@ -438,8 +478,8 @@
          SECTION 5 — TOOLS / ARMORY
     ════════════════════════════════════ -->
     <section id="tools" class="section">
-      <div class="section-label">// WEAPON LOADOUT</div>
-      <h2 class="section-title" data-text="THE ARMORY">THE ARMORY</h2>
+      <div class="section-label" data-term="armory-eyebrow">// WEAPON LOADOUT</div>
+      <h2 class="section-title" data-text="THE ARMORY" data-term="armory-label">THE ARMORY</h2>
 
       <div class="tools-grid">
         <div class="tool-card reveal"><div class="tool-icon">🦅</div><div><span class="tool-name">CROWDSTRIKE FALCON</span><span class="tool-desc">Next-Gen SIEM &amp; Threat Intelligence</span></div></div>
@@ -468,8 +508,8 @@
          SECTION 5B — PROJECTS
     ════════════════════════════════════ -->
     <section id="projects" class="section">
-      <div class="section-label">// DEPLOYED OPERATIONS</div>
-      <h2 class="section-title" data-text="PROJECTS">PROJECTS</h2>
+      <div class="section-label" data-term="projects-eyebrow">// DEPLOYED OPERATIONS</div>
+      <h2 class="section-title" data-text="PROJECTS" data-term="projects-label">PROJECTS</h2>
 
       <div class="projects-grid">
 
@@ -561,6 +601,86 @@
         </div>
 
       </div>
+
+      <!-- ── GITHUB CONTRIBUTION HEATMAP ──────────────────────── -->
+      <div id="gh-heatmap-section" class="hud-panel gh-heatmap-panel reveal" aria-label="GitHub contribution heatmap">
+        <div class="gh-heatmap-header">
+          <div class="gh-heatmap-title-row">
+            <span class="gh-heatmap-label">// DEVELOPMENT ACTIVITY — GITHUB CONTRIBUTION GRAPH</span>
+            <a id="gh-username-link"
+               href="https://github.com/arunjitk"
+               target="_blank" rel="noopener"
+               class="gh-username-link"
+               aria-label="View GitHub profile">@arunjitk ↗</a>
+          </div>
+          <div class="gh-heatmap-stats">
+            <span class="gh-stat">TOTAL COMMITS: <span id="gh-total-contributions" class="gh-stat-val">—</span></span>
+            <span class="gh-stat">THIS YEAR: <span id="gh-year-contributions" class="gh-stat-val">—</span></span>
+            <span class="gh-stat-projects">ACTIVE: <span style="color:var(--matrix-green)">ThreatTrace</span> · <span style="color:var(--matrix-green)">ThreatScope</span></span>
+          </div>
+        </div>
+        <div class="gh-heatmap-canvas-wrap">
+          <canvas id="gh-heatmap-canvas" aria-label="GitHub contribution heatmap for the past 52 weeks"></canvas>
+        </div>
+        <div id="gh-heatmap-status" class="gh-heatmap-status" aria-live="polite">&gt; FETCHING CONTRIBUTION DATA...</div>
+        <div class="gh-heatmap-legend" aria-hidden="true">
+          <span class="gh-legend-label">LESS</span>
+          <span class="gh-legend-cell" style="opacity:0.18"></span>
+          <span class="gh-legend-cell" style="opacity:0.40"></span>
+          <span class="gh-legend-cell" style="opacity:0.62"></span>
+          <span class="gh-legend-cell" style="opacity:0.82"></span>
+          <span class="gh-legend-cell" style="opacity:1.00"></span>
+          <span class="gh-legend-label">MORE</span>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ═══════════════════════════════════
+         SECTION 5C — ATTACK SIMULATION
+    ════════════════════════════════════ -->
+    <section id="attack-sim" class="section">
+      <div class="section-label" data-term="atsim-eyebrow">// LIVE DEMO</div>
+      <h2 class="section-title" data-text="ATTACK SIMULATION" data-term="atsim-label">ATTACK SIMULATION</h2>
+
+      <div class="hud-panel download-panel reveal">
+        <div class="download-header">
+          <span class="classified-label">■ CLASSIFIED</span> — INCIDENT REPLAY CONSOLE — ACCESS RESTRICTED ■
+        </div>
+        <div class="download-body">
+          <div class="download-file-info">
+            <div class="download-file-row">
+              <span class="download-file-label">&gt; MODULE:</span>
+              <span class="download-file-val">INTERACTIVE ATTACK SIMULATION</span>
+            </div>
+            <div class="download-file-row">
+              <span class="download-file-label">&gt; SCENARIOS:</span>
+              <span class="download-file-val" style="color:var(--cyber-cyan)">3 AVAILABLE</span>
+            </div>
+            <div class="download-file-row">
+              <span class="download-file-label">&gt; FRAMEWORK:</span>
+              <span class="download-file-val" style="color:var(--matrix-green)">MITRE ATT&amp;CK MAPPED</span>
+            </div>
+            <div class="download-file-row">
+              <span class="download-file-label">&gt; CLEARANCE:</span>
+              <span class="download-file-val" style="color:var(--matrix-green);animation:blink 1s step-end infinite;display:inline-block">VERIFICATION REQUIRED</span>
+            </div>
+          </div>
+          <button id="sim-access-btn" class="download-btn" aria-label="Select and view attack simulation">
+            <span class="download-btn-icon">&#9654;</span>
+            &gt; [SELECT &amp; VIEW SIMULATION]
+          </button>
+        </div>
+        <div class="download-footer">
+          <span>&gt; SIM-01: <span style="color:var(--text-primary)">AiTM PHISHING / BEC</span></span>
+          <span>&gt; SIM-02: <span style="color:var(--text-primary)">MALWARE LIFECYCLE</span></span>
+          <span>&gt; SIM-03: <span style="color:var(--text-primary)">RANSOMWARE / LOCKBIT</span></span>
+          <span>&gt; TOTAL STAGES: <span style="color:var(--matrix-green)">30</span></span>
+        </div>
+      </div>
+
     </section>
 
     <div class="section-divider"></div>
@@ -599,8 +719,8 @@
          SECTION 7 — CERTIFICATIONS
     ════════════════════════════════════ -->
     <section id="certs" class="section">
-      <div class="section-label">// CLEARANCE LEVEL</div>
-      <h2 class="section-title" data-text="CERTIFICATIONS">CERTIFICATIONS</h2>
+      <div class="section-label" data-term="certs-eyebrow">// CLEARANCE LEVEL</div>
+      <h2 class="section-title" data-text="CERTIFICATIONS" data-term="certs-label">CERTIFICATIONS</h2>
 
       <div class="certs-grid">
         <div class="cert-badge reveal">
@@ -677,8 +797,8 @@
          SECTION 8 — AWARDS
     ════════════════════════════════════ -->
     <section id="awards" class="section">
-      <div class="section-label">// FIELD COMMENDATIONS</div>
-      <h2 class="section-title" data-text="AWARDS">AWARDS</h2>
+      <div class="section-label" data-term="awards-eyebrow">// FIELD COMMENDATIONS</div>
+      <h2 class="section-title" data-text="AWARDS" data-term="awards-label">AWARDS</h2>
 
       <div class="awards-list">
         <div class="award-banner" role="article">
@@ -794,7 +914,7 @@
           </div>
           <button
             id="hub-access-btn"
-            class="download-btn hub-btn"
+            class="download-btn"
             aria-label="Open Cyber Security Hub on Notion"
           >
             <span class="download-btn-icon">&#8599;</span>
@@ -866,8 +986,8 @@
          SECTION 11 — CONTACT
     ════════════════════════════════════ -->
     <section id="contact" class="section">
-      <div class="section-label">// ESTABLISH UPLINK</div>
-      <h2 class="section-title" data-text="CONTACT">CONTACT</h2>
+      <div class="section-label" data-term="contact-eyebrow">// ESTABLISH UPLINK</div>
+      <h2 class="section-title" data-text="CONTACT" data-term="contact-label">CONTACT</h2>
 
       <div class="hud-panel contact-terminal reveal">
         <div style="font-family:var(--font-hud); font-size:0.65rem; color:var(--text-dim); letter-spacing:0.2em; margin-bottom:1.5rem;">
@@ -940,7 +1060,7 @@
 
   <!-- ═══ FOOTER ═══ -->
   <footer>
-    <span>&copy; 2026 Arunjit K — All systems nominal.</span>
+    <span>&copy; 2026 Arunjit K — <span data-term="footer-line">All systems nominal.</span></span>
     <span class="footer-cursor" aria-hidden="true"></span>
     <div style="margin-top:0.5rem; font-size:0.65rem; color:var(--text-dim);">
       Press <kbd style="border:1px solid var(--text-dim); padding:0 4px; border-radius:2px;">`</kbd> for terminal &nbsp;|&nbsp; ↑↑↓↓←→←→BA for a surprise
@@ -999,6 +1119,148 @@
     </div>
   </div>
 
+  <!-- Simulation Selector Modal -->
+  <div id="sim-selector-modal" role="dialog" aria-label="Select simulation scenario" aria-modal="true">
+    <div class="sel-box">
+      <div class="sel-topbar">
+        <span class="sel-topbar-label">&gt; SELECT SIMULATION MODULE</span>
+        <button class="sel-close-btn" id="sel-modal-close" aria-label="Close">[ESC]</button>
+      </div>
+      <div class="sel-subhead">&gt; CHOOSE INCIDENT REPLAY SCENARIO — CLEARANCE VERIFICATION FOLLOWS</div>
+      <div class="sel-grid">
+
+        <!-- SIM-01: AiTM -->
+        <div class="hud-panel download-panel sel-hud-card" id="sel-aitm" tabindex="0" role="button" aria-label="Select AiTM Phishing simulation">
+          <div class="download-header">
+            <span class="classified-label">■ SIM-01</span> — AiTM PHISHING CAMPAIGN ■
+          </div>
+          <div class="download-body">
+            <div class="download-file-info">
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; STAGES:</span>
+                <span class="download-file-val" style="color:var(--neon-magenta)">8 PHASES</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; MALWARE:</span>
+                <span class="download-file-val" style="color:var(--matrix-green)">EVILGINX2</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; TACTIC:</span>
+                <span class="download-file-val" style="color:var(--cyber-cyan)">BEC / SESSION HIJACK</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; ACTOR:</span>
+                <span class="download-file-val" style="color:var(--neon-magenta)">APT-FIN11</span>
+              </div>
+            </div>
+            <button class="download-btn sel-launch-btn">
+              <span class="download-btn-icon">&#9654;</span>
+              &gt; [SELECT SIM-01]
+            </button>
+          </div>
+          <div class="download-footer">
+            <span>&gt; FRAMEWORK: <span style="color:var(--matrix-green)">MITRE ATT&amp;CK</span></span>
+            <span>&gt; TYPE: <span style="color:var(--text-primary)">PHISHING / BEC</span></span>
+          </div>
+        </div>
+
+        <!-- SIM-02: Malware Timeline -->
+        <div class="hud-panel download-panel sel-hud-card" id="sel-malware" tabindex="0" role="button" aria-label="Select Malware Lifecycle simulation">
+          <div class="download-header">
+            <span class="classified-label">■ SIM-02</span> — MALWARE LIFECYCLE TIMELINE ■
+          </div>
+          <div class="download-body">
+            <div class="download-file-info">
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; STAGES:</span>
+                <span class="download-file-val" style="color:var(--neon-magenta)">10 PHASES</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; MALWARE:</span>
+                <span class="download-file-val" style="color:var(--matrix-green)">ASYNCRAT</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; TACTIC:</span>
+                <span class="download-file-val" style="color:var(--cyber-cyan)">FULL KILL-CHAIN IR</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; ACTOR:</span>
+                <span class="download-file-val" style="color:var(--neon-magenta)">TA505</span>
+              </div>
+            </div>
+            <button class="download-btn sel-launch-btn">
+              <span class="download-btn-icon">&#9654;</span>
+              &gt; [SELECT SIM-02]
+            </button>
+          </div>
+          <div class="download-footer">
+            <span>&gt; FRAMEWORK: <span style="color:var(--matrix-green)">MITRE ATT&amp;CK</span></span>
+            <span>&gt; TYPE: <span style="color:var(--text-primary)">MALWARE LIFECYCLE</span></span>
+          </div>
+        </div>
+
+        <!-- SIM-03: Ransomware Timeline -->
+        <div class="hud-panel download-panel sel-hud-card" id="sel-ransomware" tabindex="0" role="button" aria-label="Select Ransomware Attack simulation">
+          <div class="download-header">
+            <span class="classified-label">■ SIM-03</span> — RANSOMWARE ATTACK TIMELINE ■
+          </div>
+          <div class="download-body">
+            <div class="download-file-info">
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; STAGES:</span>
+                <span class="download-file-val" style="color:var(--neon-magenta)">12 PHASES</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; MALWARE:</span>
+                <span class="download-file-val" style="color:var(--matrix-green)">LOCKBIT 3.0</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; TACTIC:</span>
+                <span class="download-file-val" style="color:var(--cyber-cyan)">DOUBLE EXTORTION</span>
+              </div>
+              <div class="download-file-row">
+                <span class="download-file-label">&gt; ACTOR:</span>
+                <span class="download-file-val" style="color:var(--neon-magenta)">LB-AFFILIATE-47</span>
+              </div>
+            </div>
+            <button class="download-btn sel-launch-btn">
+              <span class="download-btn-icon">&#9654;</span>
+              &gt; [SELECT SIM-03]
+            </button>
+          </div>
+          <div class="download-footer">
+            <span>&gt; FRAMEWORK: <span style="color:var(--matrix-green)">MITRE ATT&amp;CK</span></span>
+            <span>&gt; TYPE: <span style="color:var(--text-primary)">RANSOMWARE / IR</span></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Sim Access Modal -->
+  <div id="sim-access-modal" role="dialog" aria-label="Simulation access verification" aria-modal="true">
+    <div class="dlm-box">
+      <div class="dlm-header">
+        <span>&gt; CLEARANCE VERIFICATION REQUIRED</span>
+        <button class="dlm-close" id="sam-close" aria-label="Close">[ESC]</button>
+      </div>
+      <div class="dlm-subhead">&gt; INITIATE INCIDENT REPLAY ACCESS PROTOCOL</div>
+      <form id="sim-access-form" class="dlm-form" novalidate>
+        <div class="form-row">
+          <label class="form-prompt" for="sam-name">&gt; CALLSIGN (NAME):</label>
+          <input class="form-input" type="text" id="sam-name" placeholder="John Doe" required autocomplete="name" />
+        </div>
+        <div class="form-row">
+          <label class="form-prompt" for="sam-email">&gt; RETURN ADDRESS (EMAIL):</label>
+          <input class="form-input" type="email" id="sam-email" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div id="sam-status" style="display:none; font-size:0.78rem; font-family:var(--font-mono);"></div>
+        <button type="submit" class="transmit-btn" id="sam-submit">&gt; [AUTHORIZE &amp; LAUNCH SIM]</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Terminal overlay -->
   <div id="terminal-overlay" role="dialog" aria-label="Secret terminal" aria-modal="true">
     <button class="terminal-close-btn" id="terminal-close">[ESC / CLOSE]</button>
@@ -1046,9 +1308,24 @@
     }
   </script>
 
+  <!-- Global tooltip for GitHub heatmap -->
+  <div id="gh-heatmap-tooltip" style="
+    position:fixed; display:none; z-index:9000;
+    background:rgba(0,8,0,0.96); border:1px solid rgba(0,255,65,0.35);
+    color:#C8E6C9; font-family:'Share Tech Mono',monospace; font-size:11px;
+    padding:5px 10px; border-radius:3px; pointer-events:none;
+    white-space:nowrap; letter-spacing:0.06em;
+  " aria-hidden="true"></div>
+
+  <!-- BIOS boot sequence (must load first) -->
+  <script src="js/bios.js"></script>
   <!-- Core scripts -->
   <script src="js/rain.js"></script>
   <script src="js/animations.js"></script>
+  <!-- Feature enhancement scripts -->
+  <script src="js/radar-chart.js"></script>
+  <script src="js/career-gantt.js"></script>
+  <script src="js/github-heatmap.js"></script>
 
   <!-- ═══ LIVE CHAT WIDGET ═══ -->
   <button id="chat-fab" class="chat-fab" aria-label="Open live chat" aria-expanded="false">

@@ -557,8 +557,8 @@ main {
   transition: all 0.1s;
 }
 
-/* ---------- SECTION: DOWNLOAD RESUME ---------- */
-#download .download-panel {
+/* ---------- SECTION: DOWNLOAD / HUB / SIM PANELS ---------- */
+.download-panel {
   max-width: 650px;
   margin: 0 auto;
   padding: 2rem;
@@ -1675,7 +1675,8 @@ footer {
 
 /* ---------- DOWNLOAD LEAD MODAL ---------- */
 #download-lead-modal,
-#hub-access-modal {
+#hub-access-modal,
+#sim-access-modal {
   display: none;
   position: fixed;
   top: 0; left: 0;
@@ -1689,7 +1690,8 @@ footer {
 }
 
 #download-lead-modal.open,
-#hub-access-modal.open { display: flex; }
+#hub-access-modal.open,
+#sim-access-modal.open { display: flex; }
 
 .dlm-box {
   background: #080808;
@@ -2392,4 +2394,823 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--danger-red
   background: rgba(0, 255, 65, 0.1);
   box-shadow: 0 0 12px rgba(0, 255, 65, 0.2);
   text-shadow: none;
+}
+
+/* ============================================================
+   BIOS BOOT SEQUENCE OVERLAY
+   ============================================================ */
+
+#bios-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0A0A0A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 13px;
+  color: #C0C0C0;
+  animation: biosCrtFlicker 8s ease-in-out infinite;
+}
+
+@keyframes biosCrtFlicker {
+  0%, 94%, 96%, 100% { opacity: 1; }
+  95% { opacity: 0.96; }
+}
+
+.bios-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  z-index: 1;
+}
+
+.bios-screen {
+  position: relative;
+  z-index: 2;
+  width: min(860px, 94vw);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform-origin: center center;
+}
+
+.bios-output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 8px;
+  scrollbar-width: none;
+}
+.bios-output::-webkit-scrollbar { display: none; }
+
+.bios-line {
+  line-height: 1.65;
+  white-space: pre;
+  color: #C0C0C0;
+}
+
+.bios-ok {
+  color: #00FF41;
+  font-weight: bold;
+}
+
+.bios-box {
+  display: block;
+  color: #C0C0C0;
+  margin: 8px 0 4px;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+/* ── BIOS MENU ──── */
+.bios-menu {
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.bios-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  line-height: 1.7;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: background 0.05s;
+  overflow: hidden;
+}
+
+.bios-menu-item.bios-selected {
+  background: #C0C0C0;
+  color: #0A0A0A;
+}
+
+.bios-menu-item.bios-selected .bios-key,
+.bios-menu-item.bios-selected .bios-level-name,
+.bios-menu-item.bios-selected .bios-level-desc,
+.bios-menu-item.bios-selected .bios-arrow {
+  color: #0A0A0A;
+}
+
+.bios-arrow { width: 10px; flex-shrink: 0; color: #C0C0C0; }
+.bios-key   { color: #888; font-size: 11px; flex-shrink: 0; }
+.bios-level-name { font-weight: bold; min-width: 90px; }
+.bios-level-desc { color: #888; font-size: 12px; }
+
+.bios-cursor {
+  display: inline;
+  color: #C0C0C0;
+  animation: biosCursorBlink 530ms step-end infinite;
+  margin-left: 2px;
+}
+
+.bios-menu-item.bios-selected .bios-cursor {
+  color: #0A0A0A;
+}
+
+@keyframes biosCursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.bios-menu-hint {
+  margin-top: 14px;
+  color: #666;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ── BIOS CONFIRM LINES ──── */
+.bios-confirm { margin-top: 10px; }
+.bios-confirm-line { color: #C0C0C0; line-height: 1.8; }
+
+/* ============================================================
+   ACCESS LEVEL — CSS VARIABLE OVERRIDES
+   ============================================================ */
+
+/* USER — default palette, no override needed */
+[data-access-level="civilian"] {
+  --matrix-green:  #00FF41;
+  --cyber-cyan:    #00F0FF;
+  --neon-magenta:  #FF00FF;
+  --glow-green:    0 0 10px rgba(0,255,65,0.7), 0 0 20px rgba(0,255,65,0.4), 0 0 40px rgba(0,255,65,0.2);
+  --glow-cyan:     0 0 10px rgba(0,240,255,0.7), 0 0 20px rgba(0,240,255,0.4);
+  --glow-magenta:  0 0 10px rgba(255,0,255,0.7), 0 0 20px rgba(255,0,255,0.4);
+  --border-green:  1px solid rgba(0,255,65,0.4);
+  --grid-line:     rgba(0,255,65,0.08);
+  --text-dim:      #4A6F4A;
+}
+
+/* ANALYST — electric blue / SOC palette */
+[data-access-level="analyst"] {
+  --matrix-green:  #00D4FF;
+  --cyber-cyan:    #4FC3F7;
+  --neon-magenta:  #FF6B35;
+  --glow-green:    0 0 10px rgba(0,212,255,0.7), 0 0 20px rgba(0,212,255,0.4), 0 0 40px rgba(0,212,255,0.2);
+  --glow-cyan:     0 0 10px rgba(79,195,247,0.7), 0 0 20px rgba(79,195,247,0.4);
+  --glow-magenta:  0 0 10px rgba(255,107,53,0.7), 0 0 20px rgba(255,107,53,0.4);
+  --border-green:  1px solid rgba(0,212,255,0.4);
+  --grid-line:     rgba(0,212,255,0.07);
+  --text-dim:      #3D6070;
+  --panel-bg:      rgba(0,10,20,0.88);
+}
+
+/* ROOT — red / gold critical-access palette */
+[data-access-level="root"] {
+  --matrix-green:  #FF0044;
+  --cyber-cyan:    #FF4D6D;
+  --neon-magenta:  #FFC300;
+  --glow-green:    0 0 10px rgba(255,0,68,0.7), 0 0 20px rgba(255,0,68,0.4), 0 0 40px rgba(255,0,68,0.2);
+  --glow-cyan:     0 0 10px rgba(255,77,109,0.7), 0 0 20px rgba(255,77,109,0.4);
+  --glow-magenta:  0 0 10px rgba(255,195,0,0.7), 0 0 20px rgba(255,195,0,0.4);
+  --border-green:  1px solid rgba(255,0,68,0.4);
+  --grid-line:     rgba(255,0,68,0.06);
+  --text-dim:      #6B3040;
+  --panel-bg:      rgba(20,0,5,0.90);
+}
+
+/* ============================================================
+   ACCESS LEVEL HUD BADGE (persistent top-right)
+   ============================================================ */
+
+#access-level-hud {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 9px;
+  background: rgba(0, 6, 0, 0.88);
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  border-radius: 3px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.52rem;
+  letter-spacing: 0.18em;
+  color: rgba(200, 230, 201, 0.65);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+#access-level-hud.access-hud--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.access-hud-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--matrix-green);
+  box-shadow: 0 0 6px var(--matrix-green);
+  flex-shrink: 0;
+  animation: hudDotPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes hudDotPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.access-hud-key  { color: var(--text-dim); margin-right: 4px; }
+.access-hud-val  { color: var(--matrix-green); font-weight: 700; }
+
+/* Per-level badge border tint */
+#access-level-hud.access-hud--analyst {
+  border-color: rgba(0, 212, 255, 0.3);
+}
+#access-level-hud.access-hud--root {
+  border-color: rgba(255, 0, 68, 0.35);
+}
+
+/* ============================================================
+   SKILL RADAR CHART
+   ============================================================ */
+
+.skill-radar-panel {
+  padding: 1.5rem 2rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.radar-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: var(--border-green);
+}
+
+.radar-panel-label {
+  font-family: var(--font-hud);
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+  color: rgba(0, 255, 65, 0.6);
+}
+
+.radar-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.radar-legend-item {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.radar-chart-wrap {
+  width: 100%;
+  max-width: 520px;
+  height: 360px;
+  margin: 0 auto 1.25rem;
+  position: relative;
+}
+
+.radar-domain-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0, 255, 65, 0.08);
+}
+
+.radar-badge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--badge-color, var(--matrix-green));
+  border: 1px solid var(--badge-color, rgba(0, 255, 65, 0.35));
+  padding: 3px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.08em;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0.75;
+  transition: opacity 0.2s;
+}
+.radar-badge:hover { opacity: 1; }
+
+@media (max-width: 768px) {
+  .radar-chart-wrap { height: 280px; }
+  .radar-panel-header { flex-direction: column; align-items: flex-start; }
+  .radar-legend { gap: 0.5rem; }
+}
+
+/* ============================================================
+   CAREER GANTT TIMELINE
+   ============================================================ */
+
+.career-gantt-panel {
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.gantt-panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.65rem;
+  border-bottom: var(--border-green);
+  flex-wrap: wrap;
+}
+
+.gantt-panel-label {
+  font-family: var(--font-hud);
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+  color: rgba(0, 255, 65, 0.6);
+}
+
+.gantt-panel-hint {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+/* ── RULER ── */
+.gantt-ruler {
+  display: flex;
+  margin-bottom: 6px;
+}
+
+.gantt-ruler-spacer {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.gantt-ruler-track {
+  flex: 1;
+  position: relative;
+  height: 24px;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.15);
+}
+
+.gantt-year-mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gantt-year-tick {
+  width: 1px;
+  height: 6px;
+  background: rgba(0, 255, 65, 0.3);
+}
+
+.gantt-year-label {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+/* ── ROWS ── */
+.gantt-rows { display: flex; flex-direction: column; gap: 10px; }
+
+.gantt-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.gantt-row-label {
+  width: 80px;
+  flex-shrink: 0;
+  padding-right: 10px;
+}
+
+.gantt-company-abbr {
+  font-family: var(--font-hud);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.gantt-track-area {
+  flex: 1;
+  position: relative;
+  height: 52px;
+}
+
+/* ── BARS ── */
+.gantt-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(0, 20, 0, 0.6);
+  border: 1px solid;                 /* color set inline */
+  border-radius: 3px;
+  padding: 4px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 60px;
+}
+
+.gantt-bar:hover,
+.gantt-bar[aria-expanded="true"] {
+  background: rgba(0, 40, 0, 0.75);
+  transform: scaleY(1.04);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.gantt-bar--active {
+  animation: ganttActivePulse 3s ease-in-out infinite;
+}
+
+@keyframes ganttActivePulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(0,255,65,0); }
+  50%       { box-shadow: 0 0 12px rgba(0,255,65,0.25); }
+}
+
+.gantt-bar-icon { font-size: 0.75rem; display: none; }
+
+.gantt-bar-role {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: #C8E6C9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.04em;
+}
+
+.gantt-bar-duration {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: rgba(200, 230, 201, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-tool-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow: hidden;
+  margin-top: 1px;
+}
+
+.gantt-tool-chips--full {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.gantt-tool-chip {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  color: rgba(0, 240, 255, 0.75);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  background: rgba(0, 240, 255, 0.04);
+  padding: 1px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.gantt-active-pulse {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--matrix-green);
+  box-shadow: 0 0 6px var(--matrix-green);
+  animation: hudDotPulse 2s ease-in-out infinite;
+}
+
+/* ── MISSION BRIEFING PANEL ── */
+.gantt-briefing {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  margin-top: 0;
+}
+
+.gantt-briefing--open {
+  max-height: 600px;
+  margin-top: 14px;
+}
+
+.gantt-brief-card {
+  background: rgba(0, 12, 0, 0.9);
+  border: 1px solid var(--mission-color, rgba(0,255,65,0.3));
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  animation: briefFadeIn 0.25s ease-out;
+}
+
+@keyframes briefFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.gantt-brief-header {
+  padding-bottom: 0.85rem;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gantt-brief-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.gantt-brief-codename {
+  font-family: var(--font-hud);
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  color: rgba(200, 230, 201, 0.4);
+}
+
+.gantt-brief-clearance {
+  font-family: var(--font-hud);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 2px;
+}
+
+.gantt-brief-clearance--internal    { color: #00F0FF; border-color: rgba(0,240,255,0.3); }
+.gantt-brief-clearance--confidential{ color: #FF6B00; border-color: rgba(255,107,0,0.3); }
+.gantt-brief-clearance--secret      { color: #FF00FF; border-color: rgba(255,0,255,0.3); }
+.gantt-brief-clearance--top-secret  { color: #FF1744; border-color: rgba(255,23,68,0.3); }
+
+.gantt-brief-company {
+  font-family: var(--font-hud);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--mission-color, var(--matrix-green));
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.gantt-brief-role {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #C8E6C9;
+}
+
+.gantt-brief-period {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.gantt-brief-body { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.gantt-brief-section { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.gantt-brief-label {
+  font-family: var(--font-hud);
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  color: rgba(0, 255, 65, 0.45);
+}
+
+.gantt-brief-context {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: rgba(200, 230, 201, 0.7);
+  line-height: 1.65;
+}
+
+.gantt-brief-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.gantt-brief-li {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: #C8E6C9;
+  line-height: 1.6;
+  display: flex;
+  gap: 8px;
+}
+
+.gantt-brief-bullet {
+  color: var(--mission-color, var(--matrix-green));
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.gantt-brief-impact {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(0, 255, 65, 0.04);
+  border-left: 2px solid var(--mission-color, rgba(0,255,65,0.4));
+  margin-top: 0.25rem;
+  line-height: 1.6;
+}
+
+.gantt-brief-impact-label {
+  color: rgba(0, 255, 65, 0.55);
+  margin-right: 6px;
+  font-family: var(--font-hud);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+}
+
+.gantt-brief-impact-text { color: #C8E6C9; }
+
+.gantt-brief-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  color: rgba(0, 255, 65, 0.45);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+  letter-spacing: 0.08em;
+}
+
+.gantt-brief-close:hover {
+  border-color: var(--matrix-green);
+  color: var(--matrix-green);
+}
+
+@media (max-width: 900px) {
+  .gantt-ruler-spacer { width: 52px; }
+  .gantt-row-label    { width: 52px; }
+  .gantt-bar-role     { font-size: 0.58rem; }
+  .gantt-tool-chips   { display: none; }
+}
+
+@media (max-width: 600px) {
+  .career-gantt-panel { padding: 1rem; }
+  .gantt-ruler-spacer { width: 40px; }
+  .gantt-row-label    { width: 40px; }
+  .gantt-bar          { padding: 3px 6px; }
+  .gantt-bar-duration { display: none; }
+  .gantt-brief-card   { padding: 1rem; }
+}
+
+/* ============================================================
+   GITHUB CONTRIBUTION HEATMAP
+   ============================================================ */
+
+.gh-heatmap-panel {
+  padding: 1.25rem 1.5rem 1.1rem;
+  margin-top: 1.5rem;
+  overflow: hidden;
+}
+
+.gh-heatmap-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: var(--border-green);
+}
+
+.gh-heatmap-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.gh-heatmap-label {
+  font-family: var(--font-hud);
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+  color: rgba(0, 255, 65, 0.6);
+}
+
+.gh-username-link {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--cyber-cyan);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+.gh-username-link:hover { color: var(--matrix-green); text-shadow: var(--glow-green); }
+
+.gh-heatmap-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.gh-stat {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.gh-stat-val {
+  color: var(--matrix-green);
+  font-weight: bold;
+}
+
+.gh-stat-projects {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+.gh-heatmap-canvas-wrap {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 65, 0.2) transparent;
+  padding-bottom: 4px;
+}
+
+.gh-heatmap-canvas-wrap::-webkit-scrollbar       { height: 3px; }
+.gh-heatmap-canvas-wrap::-webkit-scrollbar-thumb  { background: rgba(0,255,65,0.2); border-radius: 2px; }
+
+#gh-heatmap-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.gh-heatmap-status {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: rgba(0, 255, 65, 0.4);
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+}
+
+.gh-heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
+.gh-legend-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.gh-legend-cell {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--matrix-green);
 }

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AiTM Phishing Attack Simulation — ARUNJIT.K</title>
+  <meta name="description" content="Interactive AiTM phishing attack simulation — 8-stage Adversary-in-the-Middle BEC campaign, MITRE ATT&CK mapped." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/sim.css" />
+</head>
+
+<body class="sim-body">
+
+  <!-- ── CUSTOM CURSOR ───────────────────────────────────────── -->
+  <div id="cursor" aria-hidden="true"></div>
+  <div id="cursor-ring" aria-hidden="true"></div>
+
+  <!-- ── BACKGROUND LAYERS ────────────────────────────────────── -->
+  <canvas id="bg-rain" aria-hidden="true"></canvas>
+  <div class="sim-bg-grid" aria-hidden="true"></div>
+  <div class="sim-crt"     aria-hidden="true"></div>
+  <div class="sim-vignette" aria-hidden="true"></div>
+
+  <!-- ── STATUS BAR ───────────────────────────────────────────── -->
+  <div id="sim-status-bar" role="status" aria-live="polite" aria-label="Simulation status">
+    <a href="/" class="status-back-btn" aria-label="Return to portfolio">← PORTFOLIO</a>
+
+    <div class="status-item">
+      CASE ID: <span class="val-cyan" id="case-id">—</span>
+    </div>
+    <div class="status-item">
+      MALWARE: <span class="val-red" id="malware-family">—</span>
+    </div>
+    <div class="status-item">
+      ACTOR: <span class="val-orange" id="threat-actor">—</span>
+    </div>
+    <div class="status-item">
+      HOST: <span class="val-cyan" id="host-id">—</span>
+    </div>
+    <div class="status-item">
+      SEVERITY: <span id="severity-label">—</span>
+    </div>
+    <div class="status-item">
+      STAGE: <span class="val-green" id="stage-counter">—</span>
+    </div>
+    <div class="status-item">
+      T+ <span class="val-green" id="incident-timer">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- ── MAIN PAGE ────────────────────────────────────────────── -->
+  <div id="sim-page">
+
+    <!-- Header -->
+    <div id="sim-header">
+      <div class="sim-section-label">// LIVE DEMO — INCIDENT REPLAY CONSOLE</div>
+      <h1 class="sim-title">AiTM PHISHING ATTACK SIMULATION</h1>
+      <div class="sim-case-meta">
+        <span>CASE FILE: <span id="display-case-id" style="color:var(--cyber-cyan)">IR-2024-0612</span></span>
+        <span>FRAMEWORK: <span style="color:#00FF41">MITRE ATT&amp;CK</span></span>
+        <span>SCENARIO: <span style="color:#FF00FF">EVILGINX2 / APT-FIN11</span></span>
+        <span>STAGES: <span style="color:#00FF41">8</span></span>
+      </div>
+    </div>
+
+    <!-- Two-panel layout -->
+    <div id="sim-main">
+
+      <!-- ── LEFT — Canvas + Scrubber + Controls ───────────────── -->
+      <div id="sim-left">
+
+        <div class="sim-canvas-label">// ATTACK PROGRESSION GRAPH — AiTM BEC CAMPAIGN RECONSTRUCTION</div>
+
+        <!-- Attack chain canvas -->
+        <div id="canvas-container">
+          <canvas id="attack-canvas"
+            aria-label="Interactive attack chain visualization — use arrow keys or click stage nodes to navigate"
+            role="img"></canvas>
+          <div id="chain-flash" class="chain-flash-msg" aria-live="assertive"></div>
+        </div>
+
+        <!-- Stage scrubber -->
+        <div id="sim-scrubber" aria-label="Stage timeline navigation">
+          <div class="scrubber-label">// STAGE TIMELINE — CLICK TO JUMP</div>
+          <div id="scrubber-stages" role="group" aria-label="Stage selector"></div>
+        </div>
+
+        <!-- Controls -->
+        <div id="sim-controls">
+          <button id="ctrl-prev"    class="ctrl-btn" aria-label="Previous stage">← PREV STAGE</button>
+          <button id="ctrl-autoplay" class="ctrl-btn ctrl-play" aria-label="Toggle autoplay">▶ AUTOPLAY</button>
+          <button id="ctrl-reinit"  class="ctrl-btn ctrl-reinit" aria-label="Reinitialize simulation">↺ REINITIALIZE</button>
+          <button id="ctrl-next"   class="ctrl-btn" aria-label="Next stage">NEXT STAGE →</button>
+          <span class="ctrl-kbd-hint">← → ARROW KEYS &nbsp;|&nbsp; SPACE = AUTOPLAY</span>
+        </div>
+
+        <!-- Legend -->
+        <div id="sim-legend" aria-label="Visual legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#00FF41"></div> ACTIVE STAGE
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(0,255,65,0.4)"></div> COMPLETED
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(200,230,201,0.2)"></div> PENDING
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#00F0FF;border-radius:0;transform:rotate(45deg)"></div> DETECTION POINT
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#FF1744"></div> CRITICAL
+          </div>
+        </div>
+
+      </div><!-- /sim-left -->
+
+      <!-- ── RIGHT — Intelligence Debrief Panel ────────────────── -->
+      <aside id="sim-intel-panel"
+        aria-label="Stage intelligence debrief panel"
+        aria-live="polite">
+        <div id="intel-inner" tabindex="0">
+          <!-- Dynamically populated by sim-core.js -->
+        </div>
+      </aside>
+
+    </div><!-- /sim-main -->
+
+  </div><!-- /sim-page -->
+
+  <!-- ── SCENARIO DATA ────────────────────────────────────────── -->
+  <script src="js/sim-data-aitm.js"></script>
+  <!-- ── ENGINE ─────────────────────────────────────────────── -->
+  <script src="js/sim-core.js"></script>
+
+</body>
+</html>

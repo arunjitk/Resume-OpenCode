@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ransomware Attack Simulation Timeline — ARUNJIT.K</title>
+  <meta name="description" content="Interactive ransomware attack simulation — 12-stage LockBit 3.0 operator playbook from initial access through double extortion and IR containment, MITRE ATT&CK mapped." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
+
+  <!-- Base portfolio styles (variables, fonts, scrollbar) -->
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Simulation-specific styles -->
+  <link rel="stylesheet" href="css/sim.css" />
+
+  <!-- Ransomware-specific overlay styles -->
+  <style>
+    /* Taller canvas for 12-stage 3-row layout */
+    #canvas-container { height: 380px !important; }
+
+    /* ── ESCALATING URGENCY OVERLAYS ─── */
+    .rsw-overlay {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      padding: 5px 18px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 30;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .rsw-overlay.visible { opacity: 1; }
+
+    #overlay-vss  {
+      background: rgba(255, 23, 68, 0.15);
+      border: 1px solid rgba(255, 23, 68, 0.6);
+      color: #FF1744;
+      text-shadow: 0 0 10px rgba(255, 23, 68, 0.8);
+      animation: rswGlow 3s ease-in-out infinite;
+    }
+    #overlay-enc  {
+      background: rgba(255, 0, 0, 0.18);
+      border: 1px solid rgba(255, 0, 0, 0.7);
+      color: #FF0000;
+      text-shadow: 0 0 14px rgba(255, 0, 0, 1);
+      animation: rswGlow 2s ease-in-out infinite;
+    }
+    #overlay-ran  {
+      background: rgba(255, 0, 0, 0.12);
+      border: 1px solid rgba(255, 100, 0, 0.6);
+      color: #FF6600;
+      text-shadow: 0 0 10px rgba(255, 100, 0, 0.8);
+      animation: rswGlow 3.5s ease-in-out infinite;
+    }
+
+    @keyframes rswGlow {
+      0%, 100% { opacity: 1;   text-shadow: 0 0 10px currentColor; }
+      50%       { opacity: 0.7; text-shadow: 0 0 20px currentColor; }
+    }
+
+    /* Encryption red-wash over canvas */
+    #enc-wash {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(255,0,0,0.08) 0%, rgba(255,0,0,0.03) 60%, transparent 100%);
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.8s;
+    }
+    #enc-wash.active { opacity: 1; }
+    #enc-wash.pulse  { animation: encPulse 2s ease-in-out infinite; }
+
+    @keyframes encPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    /* File counter */
+    #file-counter {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.6rem;
+      color: #FF1744;
+      letter-spacing: 0.08em;
+      pointer-events: none;
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.3s;
+      text-shadow: 0 0 8px rgba(255, 23, 68, 0.6);
+    }
+    #file-counter.visible { opacity: 1; }
+
+    /* Host counter badge in status bar */
+    #host-count-wrap { display: flex; align-items: center; gap: 5px; }
+  </style>
+</head>
+
+<body class="sim-body">
+
+  <!-- ── CUSTOM CURSOR ───────────────────────────────────────── -->
+  <div id="cursor" aria-hidden="true"></div>
+  <div id="cursor-ring" aria-hidden="true"></div>
+
+  <!-- ── BACKGROUND LAYERS ────────────────────────────────────── -->
+  <canvas id="bg-rain" aria-hidden="true"></canvas>
+  <div class="sim-bg-grid" aria-hidden="true"></div>
+  <div class="sim-crt"     aria-hidden="true"></div>
+  <div class="sim-vignette" aria-hidden="true"></div>
+
+  <!-- ── STATUS BAR (fixed top) ──────────────────────────────── -->
+  <div id="sim-status-bar" role="status" aria-live="polite" aria-label="Simulation status">
+    <a href="/" class="status-back-btn" aria-label="Return to portfolio">← PORTFOLIO</a>
+
+    <div class="status-item">
+      CASE ID: <span class="val-cyan" id="case-id">—</span>
+    </div>
+    <div class="status-item">
+      RANSOMWARE: <span class="val-red" id="malware-family">—</span>
+    </div>
+    <div class="status-item">
+      ACTOR: <span class="val-orange" id="threat-actor">—</span>
+    </div>
+    <div class="status-item">
+      HOSTS: <span class="val-red" id="host-id">—</span>
+    </div>
+    <div class="status-item">
+      SEVERITY: <span id="severity-label">—</span>
+    </div>
+    <div class="status-item">
+      STAGE: <span class="val-green" id="stage-counter">—</span>
+    </div>
+    <div class="status-item">
+      T+ <span class="val-green" id="incident-timer">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- ── MAIN PAGE ────────────────────────────────────────────── -->
+  <div id="sim-page">
+
+    <!-- Header -->
+    <div id="sim-header" style="margin-bottom: 6px;">
+      <div class="sim-section-label">// LIVE DEMO — RANSOMWARE INCIDENT REPLAY CONSOLE</div>
+      <h1 class="sim-title">RANSOMWARE ATTACK SIMULATION TIMELINE</h1>
+      <div class="sim-case-meta" style="gap:14px; font-size:0.65rem;">
+        <span>CASE: <span id="display-case-id" style="color:var(--cyber-cyan)">IR-2025-1203</span></span>
+        <span>FWK: <span style="color:#00FF41">MITRE ATT&amp;CK</span></span>
+        <span>ACTOR: <span style="color:#FF00FF">LOCKBIT 3.0</span></span>
+        <span>STAGES: <span style="color:#00FF41">12 PHASES</span>
+        <span>DWELL: <span style="color:#FF1744">14H 37M</span></span>
+      </div>
+    </div>
+
+    <!-- Two-panel layout -->
+    <div id="sim-main">
+
+      <!-- ── LEFT — Canvas + Scrubber + Controls ───────────────── -->
+      <div id="sim-left">
+
+        <div class="sim-canvas-label" style="font-size:0.72rem; color:#00F0FF;">// RANSOMWARE PROPAGATION GRAPH — DFIR RECONSTRUCTION</div>
+
+        <!-- Attack chain canvas -->
+        <div id="canvas-container">
+          <canvas id="attack-canvas"
+            aria-label="Interactive ransomware attack chain visualization — use arrow keys or click stage nodes to navigate"
+            role="img"></canvas>
+          <div id="chain-flash" class="chain-flash-msg" aria-live="assertive"></div>
+
+          <!-- Ransomware-specific overlays -->
+          <div id="enc-wash" aria-hidden="true"></div>
+          <div id="overlay-vss" class="rsw-overlay" aria-hidden="true">⚠ SHADOW COPIES DELETED — RECOVERY PATH ELIMINATED</div>
+          <div id="overlay-enc" class="rsw-overlay" aria-hidden="true">🔴 ENCRYPTION IN PROGRESS — LOCKBIT 3.0 ACTIVE</div>
+          <div id="overlay-ran" class="rsw-overlay" aria-hidden="true">☠ RANSOM NOTE DEPLOYED — DOUBLE EXTORTION ACTIVE</div>
+          <div id="file-counter" aria-hidden="true">FILES ENCRYPTED: 0</div>
+        </div>
+
+        <!-- Stage scrubber -->
+        <div id="sim-scrubber" aria-label="Stage timeline navigation">
+          <div class="scrubber-label" style="font-size:0.68rem; color:#00F0FF;">// STAGE TIMELINE — CLICK TO JUMP</div>
+          <div id="scrubber-stages" role="group" aria-label="Stage selector"></div>
+        </div>
+
+        <!-- Controls -->
+        <div id="sim-controls">
+          <button id="ctrl-prev"     class="ctrl-btn" aria-label="Previous stage">← PREV STAGE</button>
+          <button id="ctrl-autoplay" class="ctrl-btn ctrl-play" aria-label="Toggle autoplay">▶ AUTOPLAY</button>
+          <button id="ctrl-reinit"   class="ctrl-btn ctrl-reinit" aria-label="Reinitialize simulation">↺ REINITIALIZE</button>
+          <button id="ctrl-next"     class="ctrl-btn" aria-label="Next stage">NEXT STAGE →</button>
+          <span class="ctrl-kbd-hint">← → ARROW KEYS &nbsp;|&nbsp; SPACE = AUTOPLAY</span>
+        </div>
+
+        <!-- Legend -->
+        <div id="sim-legend" aria-label="Visual legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#00FF41"></div> CONTAINMENT / IR
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#00F0FF"></div> RECON / DISCOVERY
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#FF00FF"></div> C2 / EXFILTRATION
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#F39C12"></div> PERSISTENCE
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#FF0000"></div> ENCRYPTION / IMPACT
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:rgba(200,230,201,0.2)"></div> PENDING
+          </div>
+        </div>
+
+      </div><!-- /sim-left -->
+
+      <!-- ── RIGHT — Intelligence Debrief Panel ────────────────── -->
+      <aside id="sim-intel-panel"
+        aria-label="Stage intelligence debrief panel"
+        aria-live="polite">
+        <div id="intel-inner" tabindex="0">
+          <!-- Dynamically populated by sim-core.js -->
+        </div>
+      </aside>
+
+    </div><!-- /sim-main -->
+
+  </div><!-- /sim-page -->
+
+  <!-- ── SCENARIO DATA ───────────────────────────────────────── -->
+  <script src="js/sim-data-ransomware.js"></script>
+  <!-- ── ENGINE ─────────────────────────────────────────────── -->
+  <script src="js/sim-core.js"></script>
+
+  <!-- ── RANSOMWARE-SPECIFIC STAGE EFFECTS ──────────────────── -->
+  <script>
+  (function () {
+    'use strict';
+
+    const overlayVss = document.getElementById('overlay-vss');
+    const overlayEnc = document.getElementById('overlay-enc');
+    const overlayRan = document.getElementById('overlay-ran');
+    const encWash    = document.getElementById('enc-wash');
+    const fileCount  = document.getElementById('file-counter');
+
+    let fileTimer = null;
+    let lastCode  = null;
+
+    function hideAll () {
+      overlayVss?.classList.remove('visible');
+      overlayEnc?.classList.remove('visible');
+      overlayRan?.classList.remove('visible');
+      encWash?.classList.remove('active', 'pulse');
+      fileCount?.classList.remove('visible');
+      if (fileTimer) { clearInterval(fileTimer); fileTimer = null; }
+    }
+
+    function animateFileCounter () {
+      if (!fileCount) return;
+      fileCount.classList.add('visible');
+      let n = 0;
+      const target = 847293;
+      const step   = Math.ceil(target / 180);
+      fileTimer = setInterval(() => {
+        n = Math.min(n + step + Math.floor(Math.random() * step), target);
+        fileCount.textContent = 'FILES ENCRYPTED: ' + n.toLocaleString();
+        if (n >= target) clearInterval(fileTimer);
+      }, 350);
+    }
+
+    function applyStageEffects (code) {
+      if (code === lastCode) return;
+      lastCode = code;
+      hideAll();
+
+      if (code === 'VSS') {
+        overlayVss?.classList.add('visible');
+        encWash && (encWash.style.background = 'radial-gradient(ellipse at center, rgba(255,23,68,0.07) 0%, transparent 70%)');
+        encWash?.classList.add('active');
+      } else if (code === 'ENC') {
+        overlayEnc?.classList.add('visible');
+        encWash && (encWash.style.background = 'radial-gradient(ellipse at center, rgba(255,0,0,0.12) 0%, rgba(255,0,0,0.04) 60%, transparent 100%)');
+        encWash?.classList.add('active', 'pulse');
+        animateFileCounter();
+      } else if (code === 'RAN') {
+        overlayRan?.classList.add('visible');
+        encWash && (encWash.style.background = 'radial-gradient(ellipse at center, rgba(255,60,0,0.08) 0%, transparent 70%)');
+        encWash?.classList.add('active');
+        if (fileCount) {
+          fileCount.classList.add('visible');
+          fileCount.textContent = 'FILES ENCRYPTED: 847,293';
+        }
+      }
+    }
+
+    // Poll the scrubber active button to detect stage changes
+    function pollStage () {
+      const active = document.querySelector('.scrub-btn.scrub-active');
+      if (active) applyStageEffects(active.dataset.code || '');
+      requestAnimationFrame(pollStage);
+    }
+
+    // Wait for sim-core to build the scrubber before starting poll
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(pollStage, 500));
+    } else {
+      setTimeout(pollStage, 500);
+    }
+  })();
+  </script>
+
+</body>
+</html>

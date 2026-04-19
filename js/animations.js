@@ -595,6 +595,159 @@
     });
   }
 
+  // ─── SIMULATION SELECTOR + ACCESS FLOW ───────────────────────
+  // Tracks which simulation was chosen in the selector
+  let _simDestination = '/attack-sim.html';
+
+  const selectorModal = document.getElementById('sim-selector-modal');
+  const simModal      = document.getElementById('sim-access-modal');
+  const samClose      = document.getElementById('sam-close');
+  const samForm       = document.getElementById('sim-access-form');
+  const samStatus     = document.getElementById('sam-status');
+  const samSubmit     = document.getElementById('sam-submit');
+
+  // ── Open / close selector ────────────────────────────────────
+  function openSelector() {
+    if (selectorModal) selectorModal.classList.add('open');
+  }
+
+  function closeSelector() {
+    if (selectorModal) selectorModal.classList.remove('open');
+  }
+
+  // ── Open / close sim access modal ───────────────────────────
+  function openSimModal(destination, label) {
+    _simDestination = destination || '/attack-sim.html';
+    // Update modal sub-heading to show chosen sim
+    const sub = document.getElementById('sam-status');
+    const heading = simModal?.querySelector('.dlm-subhead');
+    if (heading) heading.textContent = `> CLEARANCE REQUIRED — ${label || 'SIMULATION'}`;
+    if (samSubmit) {
+      samSubmit.textContent = '> [AUTHORIZE & LAUNCH SIM]';
+      samSubmit.style.color = '';
+      samSubmit.disabled    = false;
+    }
+    if (samStatus) samStatus.style.display = 'none';
+    if (samForm)   samForm.reset();
+    if (simModal) {
+      simModal.classList.add('open');
+      setTimeout(() => document.getElementById('sam-name')?.focus(), 50);
+    }
+  }
+
+  function closeSimModal() {
+    if (!simModal) return;
+    simModal.classList.remove('open');
+    if (samForm)   samForm.reset();
+    if (samStatus) samStatus.style.display = 'none';
+    if (samSubmit) {
+      samSubmit.textContent = '> [AUTHORIZE & LAUNCH SIM]';
+      samSubmit.style.color = '';
+      samSubmit.disabled    = false;
+    }
+  }
+
+  // ── Main "SELECT & VIEW SIMULATION" button (opens selector) ──
+  const simAccessBtn = document.getElementById('sim-access-btn');
+  if (simAccessBtn) simAccessBtn.addEventListener('click', openSelector);
+
+  // ── Individual card launch buttons (bypass selector, go direct) ─
+  document.querySelectorAll('.sim-select-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const dest  = btn.dataset.dest  || '/attack-sim.html';
+      const label = btn.dataset.label || 'SIMULATION';
+      openSimModal(dest, label);
+    });
+  });
+
+  // ── Selector card buttons ────────────────────────────────────
+  const selAitm      = document.getElementById('sel-aitm');
+  const selMalware   = document.getElementById('sel-malware');
+  const selRansomware = document.getElementById('sel-ransomware');
+
+  function handleSelCard(el, dest, label) {
+    if (!el) return;
+    const launch = () => { closeSelector(); openSimModal(dest, label); };
+    el.addEventListener('click', launch);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); launch(); } });
+    el.querySelector('.sel-launch-btn')?.addEventListener('click', e => { e.stopPropagation(); launch(); });
+  }
+
+  handleSelCard(selAitm,       '/attack-sim.html',              'AiTM PHISHING CAMPAIGN');
+  handleSelCard(selMalware,    '/malware-simulation.html',       'MALWARE LIFECYCLE TIMELINE');
+  handleSelCard(selRansomware, '/ransomware-simulation.html',    'RANSOMWARE ATTACK TIMELINE');
+
+  // ── Close selector modal ─────────────────────────────────────
+  document.getElementById('sel-modal-close')?.addEventListener('click', closeSelector);
+  if (selectorModal) {
+    selectorModal.addEventListener('click', e => {
+      if (e.target === selectorModal) closeSelector();
+    });
+  }
+
+  if (samClose) samClose.addEventListener('click', closeSimModal);
+  if (simModal) {
+    simModal.addEventListener('click', e => { if (e.target === simModal) closeSimModal(); });
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (selectorModal?.classList.contains('open')) closeSelector();
+      if (simModal?.classList.contains('open'))      closeSimModal();
+    }
+  });
+
+  // ── Authorization form submit ────────────────────────────────
+  if (samForm) {
+    samForm.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const name  = document.getElementById('sam-name').value.trim();
+      const email = document.getElementById('sam-email').value.trim();
+
+      if (!name || !email) {
+        samStatus.textContent   = '> ERROR: CALLSIGN AND RETURN ADDRESS ARE REQUIRED.';
+        samStatus.style.color   = '#ff4444';
+        samStatus.style.display = 'block';
+        return;
+      }
+
+      samSubmit.disabled      = true;
+      samSubmit.textContent   = '> VERIFYING CLEARANCE...';
+      samStatus.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/sim-access', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ name, email }),
+        });
+
+        let data = {};
+        try { data = await res.json(); } catch { /* ignore */ }
+
+        if (res.ok && data.success) {
+          samSubmit.textContent   = '> AUTHORIZED ✓ — LAUNCHING...';
+          samSubmit.style.color   = 'var(--neon-magenta)';
+          samStatus.textContent   = '> CLEARANCE GRANTED. LOADING INCIDENT REPLAY...';
+          samStatus.style.color   = 'var(--matrix-green)';
+          samStatus.style.display = 'block';
+          setTimeout(() => { window.location.href = _simDestination; }, 1000);
+        } else {
+          throw new Error(data.error || 'Verification failed');
+        }
+      } catch (err) {
+        samSubmit.textContent   = '> [AUTHORIZE & LAUNCH SIM]';
+        samSubmit.style.color   = '';
+        samSubmit.disabled      = false;
+        samStatus.textContent   = `> ACCESS DENIED: ${err.message}`;
+        samStatus.style.color   = '#ff4444';
+        samStatus.style.display = 'block';
+      }
+    });
+  }
+
   // ─── CONTACT FORM ─────────────────────────────────────────────
   const form = document.getElementById('contact-form');
   if (form) {
