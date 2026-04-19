@@ -4,7 +4,33 @@ require('dotenv').config();
 
 const express = require('express');
 const path    = require('path');
+const fs      = require('fs');
 const { Resend } = require('resend');
+
+// ── PERSIST msgToSession across restarts ────────────────────────────────────
+const MSG_MAP_FILE = path.join(__dirname, '.msg-session-map.json');
+
+function loadMsgMap() {
+  try {
+    const raw  = fs.readFileSync(MSG_MAP_FILE, 'utf8');
+    const obj  = JSON.parse(raw);
+    const expiry = Date.now() - 24 * 60 * 60 * 1000;
+    const result = new Map();
+    for (const [k, v] of Object.entries(obj)) {
+      if (v && v.ts > expiry) result.set(Number(k), v.sessionId);
+    }
+    console.log(`[chat] loaded ${result.size} session mapping(s) from disk`);
+    return result;
+  } catch (_) { return new Map(); }
+}
+
+function saveMsgMap() {
+  const obj = {};
+  msgToSession.forEach((sessionId, msgId) => {
+    obj[msgId] = { sessionId, ts: Date.now() };
+  });
+  fs.writeFileSync(MSG_MAP_FILE, JSON.stringify(obj), 'utf8');
+}
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -236,7 +262,9 @@ app.post('/api/hub-access', async (req, res) => {
 
 // ── LIVE CHAT ─────────────────────────────────────────────────────────────────
 const chatSessions = new Map(); // sessionId → { res (SSE), messages: [], name: '' }
-const msgToSession = new Map(); // telegramMsgId → sessionId
+
+// Persist telegram msgId → sessionId mapping across restarts
+const msgToSession = loadMsgMap();
 
 // Purge idle sessions older than 24 h
 setInterval(() => {
@@ -266,15 +294,22 @@ app.get('/api/chat/events', (req, res) => {
     chatSessions.get(sessionId).res = res;
   }
 
-  // Replay existing messages so a reconnected tab sees history
-  chatSessions.get(sessionId).messages.forEach(m =>
-    res.write(`data: ${JSON.stringify(m)}\n\n`)
-  );
+  // Replay missed messages using Last-Event-ID (SSE spec).
+  // The browser automatically sends this header with the last `id:` value it
+  // received, so we only resend messages newer than that point.
+  const lastId = parseInt(req.headers['last-event-id'] || '0', 10);
+  chatSessions.get(sessionId).messages
+    .filter(m => (m.ts || 0) > lastId)
+    .forEach(m => res.write(`id: ${m.ts}\ndata: ${JSON.stringify(m)}\n\n`));
 
   const heartbeat = setInterval(() => res.write(':ping\n\n'), 25000);
   req.on('close', () => {
     clearInterval(heartbeat);
-    if (chatSessions.has(sessionId)) chatSessions.get(sessionId).res = null;
+    // Only null the session's res if it's still pointing to THIS connection.
+    // If connectSSE() raced ahead and a newer connection registered first,
+    // the close-event from the old connection must not overwrite the new one.
+    const s = chatSessions.get(sessionId);
+    if (s && s.res === res) s.res = null;
   });
 });
 
@@ -314,7 +349,15 @@ app.post('/api/chat/message', async (req, res) => {
       body:    JSON.stringify({ chat_id: chatId, text: tgText, parse_mode: 'HTML' }),
     });
     const tgJson = await tgRes.json();
-    if (tgJson.ok) msgToSession.set(tgJson.result.message_id, sessionId);
+    if (tgJson.ok) {
+      const tgMsgId = tgJson.result.message_id;
+      msgToSession.set(tgMsgId, sessionId);
+      // Persist so mapping survives server restarts
+      saveMsgMap();
+      console.log(`[chat] mapped tg_msg_id=${tgMsgId} → session=${sessionId.slice(0,8)}`);
+    } else {
+      console.error('[chat telegram] send failed:', JSON.stringify(tgJson));
+    }
   } catch (err) {
     console.error('[chat telegram]', err.message);
   }
@@ -361,47 +404,80 @@ app.listen(PORT, () => {
 // If a webhook is registered for production, this co-exists: deleteWebhook first.
 function routeTelegramUpdate(update) {
   const msg = update.message;
-  if (!msg || !msg.reply_to_message) return;
+  if (!msg) return;
 
-  const sessionId = msgToSession.get(msg.reply_to_message.message_id);
-  if (!sessionId) return;
+  // Only route replies to chat messages
+  if (!msg.reply_to_message) {
+    console.log(`[tg] update ignored — not a reply. msg_id=${msg.message_id}, text="${msg.text}"`);
+    return;
+  }
 
+  const replyToId = msg.reply_to_message.message_id;
+  console.log(`[tg] reply received — reply_to_msg_id=${replyToId}, text="${msg.text}"`);
+  console.log(`[tg] known session mappings: ${[...msgToSession.entries()].map(([k,v])=>`${k}→${String(v).slice(0,8)}`).join(', ')}`);
+
+  const sessionId = msgToSession.get(replyToId);
+  if (!sessionId) {
+    console.log(`[tg] no session found for msg_id=${replyToId}`);
+    return;
+  }
+
+  console.log(`[tg] routing reply to session=${sessionId.slice(0,8)}`);
+
+  // Ensure session exists (recreate if server restarted)
+  if (!chatSessions.has(sessionId)) {
+    chatSessions.set(sessionId, { res: null, messages: [], name: 'Visitor' });
+  }
   const session = chatSessions.get(sessionId);
-  if (!session) return;
 
-  const msgObj = { from: 'owner', name: 'Arunjit', text: msg.text, ts: Date.now() };
+  const msgObj = { from: 'owner', name: 'Arunjit K', text: msg.text, ts: Date.now() };
   session.messages.push(msgObj);
-  if (session.res) session.res.write(`data: ${JSON.stringify(msgObj)}\n\n`);
+
+  if (session.res) {
+    session.res.write(`id: ${msgObj.ts}\ndata: ${JSON.stringify(msgObj)}\n\n`);
+    console.log(`[tg] pushed reply to live SSE session=${sessionId.slice(0,8)}`);
+  } else {
+    console.log(`[tg] session=${sessionId.slice(0,8)} has no active SSE — reply queued for reconnect`);
+  }
 }
 
 async function startTelegramPolling() {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!botToken) { console.log('[telegram] No token — polling disabled'); return; }
+  if (!botToken) { console.log('[telegram] No token — skipping'); return; }
 
-  // Remove any registered webhook so getUpdates isn't blocked with 409
+  // Check if webhook is already registered — if so, skip polling
   try {
-    await fetch(`https://api.telegram.org/bot${botToken}/deleteWebhook`);
+    const r    = await fetch(`https://api.telegram.org/bot${botToken}/getWebhookInfo`);
+    const info = await r.json();
+    if (info.ok && info.result.url) {
+      console.log(`[telegram] Webhook active at ${info.result.url} — long-polling disabled`);
+      return;
+    }
   } catch (_) {}
+
+  // Fallback long-polling (only if no webhook is set)
+  console.log('[telegram] No webhook found — starting long-poll fallback...');
 
   let offset = 0;
 
   async function poll() {
     try {
       const r = await fetch(
-        `https://api.telegram.org/bot${botToken}/getUpdates?offset=${offset}&timeout=30&allowed_updates=%5B%22message%22%5D`
+        `https://api.telegram.org/bot${botToken}/getUpdates?offset=${offset}&timeout=25&allowed_updates=%5B%22message%22%5D`
       );
       const data = await r.json();
       if (data.ok && data.result.length) {
+        console.log(`[telegram] ${data.result.length} update(s) received`);
         for (const update of data.result) {
           offset = update.update_id + 1;
           routeTelegramUpdate(update);
         }
       }
     } catch (err) {
-      console.error('[telegram poll]', err.message);
-      await new Promise(r => setTimeout(r, 5000)); // back off on network error
+      console.error('[telegram poll]', err.message, err.cause?.message || '');
+      await new Promise(r => setTimeout(r, 5000));
     }
-    poll(); // tail-recurse immediately — timeout=30 means this blocks for up to 30s
+    poll();
   }
 
   poll();

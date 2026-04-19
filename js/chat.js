@@ -14,6 +14,7 @@
   let evtSource   = null;
   let isOpen      = false;
   let unread      = 0;
+  let lastMsgTs   = 0; // tracks the highest ts seen; prevents replay duplicates
 
   const fab         = document.getElementById('chat-fab');
   const win         = document.getElementById('chat-window');
@@ -89,12 +90,21 @@
   // ─── SSE connection ───────────────────────────────────────────────────────
 
   function connectSSE() {
-    if (evtSource) { evtSource.close(); evtSource = null; }
+    // Do not tear down a healthy connection. The browser auto-reconnects SSE
+    // on its own; constantly closing+reopening causes a server-side race where
+    // the old 'close' event arrives after the new connection registers, wiping
+    // session.res and silencing all subsequent replies.
+    if (evtSource && evtSource.readyState !== EventSource.CLOSED) return;
+
     evtSource = new EventSource(`/api/chat/events?sessionId=${encodeURIComponent(sessionId)}`);
 
     evtSource.onmessage = e => {
       try {
         const msg = JSON.parse(e.data);
+        // Skip messages we already displayed (guards against replay duplicates
+        // when the browser auto-reconnects after a transient network drop).
+        if (msg.ts && msg.ts <= lastMsgTs) return;
+        if (msg.ts) lastMsgTs = msg.ts;
         appendMsg(msg.from, msg.name, msg.text);
         if (!isOpen) bumpBadge();
       } catch (_) {}
