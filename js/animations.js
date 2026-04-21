@@ -6,7 +6,10 @@
   const ring = document.getElementById('cursor-ring');
   if (cursor && ring && window.innerWidth > 767) {
     let cx = 0, cy = 0, rx = 0, ry = 0;
+    let dotHalf = 6, ringHalf = 18; // half of 12px dot, 36px ring
+
     document.addEventListener('mousemove', e => { cx = e.clientX; cy = e.clientY; });
+
     document.addEventListener('mouseenter', e => {
       if (e.target.matches('a,button,[role=button],.mission-card,.cert-badge,.tool-card')) {
         cursor.style.width = '20px';
@@ -14,6 +17,7 @@
         ring.style.width = '50px';
         ring.style.height = '50px';
         ring.style.borderColor = 'rgba(0,240,255,0.6)';
+        dotHalf = 10; ringHalf = 25;
       }
     }, true);
     document.addEventListener('mouseleave', e => {
@@ -23,15 +27,23 @@
         ring.style.width = '36px';
         ring.style.height = '36px';
         ring.style.borderColor = 'rgba(0,255,65,0.5)';
+        dotHalf = 6; ringHalf = 18;
       }
     }, true);
-    (function moveCursor() {
-      rx += (cx - rx) * 0.25;
-      ry += (cy - ry) * 0.25;
-      cursor.style.transform = `translate(calc(${cx}px - 50%), calc(${cy}px - 50%))`;
-      ring.style.transform = `translate(calc(${rx}px - 50%), calc(${ry}px - 50%))`;
+
+    // Frame-rate independent lerp: ring trails smoothly at any refresh rate
+    let lastTs = 0;
+    (function moveCursor(ts) {
+      const dt = Math.min((ts - lastTs) / 16.667, 4); // normalise to 60 fps, cap spike
+      lastTs = ts;
+      const alpha = 1 - Math.pow(0.82, dt); // ~18% per 60fps frame, frame-rate independent
+      rx += (cx - rx) * alpha;
+      ry += (cy - ry) * alpha;
+      // translate3d — no calc(), enables GPU compositing layer
+      cursor.style.transform = `translate3d(${cx - dotHalf}px, ${cy - dotHalf}px, 0)`;
+      ring.style.transform   = `translate3d(${rx - ringHalf}px, ${ry - ringHalf}px, 0)`;
       requestAnimationFrame(moveCursor);
-    })();
+    })(0);
   }
 
   // ─── GLITCH TEXT REVEAL ──────────────────────────────────────

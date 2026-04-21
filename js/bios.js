@@ -110,6 +110,9 @@
     },
   };
 
+  // ─── SESSION PERSISTENCE KEY ──────────────────────────────────
+  const SESSION_KEY = 'arunjitk-access-idx';
+
   // ─── STATE ────────────────────────────────────────────────────
   let selectedIdx = 0;
   let biosOverlay = null;
@@ -173,10 +176,48 @@
   }
 
   // ─── POST ANIMATION ───────────────────────────────────────────
-  async function playPost() {
-    let accumulated = 0;
+  async function playPost(resumeIdx = null) {
+    // ── Abbreviated resume-session flow ──────────────────────────
+    if (resumeIdx !== null) {
+      const resumeName = LEVEL_NAMES[resumeIdx];
+      const resumeLines = [
+        { text: 'ARUNJIT SECURITY WORKSTATION v2.4.1',                  delay: 0   },
+        { text: 'Copyright (C) 2025 AK Systems. All rights reserved.', delay: 100 },
+        { text: '',                                                       delay: 120 },
+        { text: 'Scanning system memory...',                             delay: 200 },
+        { text: `Existing session detected. Access level: <span class="bios-ok">${resumeName}</span>`, delay: 500 },
+        { text: '',                                                       delay: 150 },
+      ];
+      for (const line of resumeLines) {
+        await sleep(line.delay);
+        appendRaw(`<div class="bios-line">${line.text.includes('<span') ? line.text : escLine(line.text)}</div>`);
+      }
+
+      await sleep(100);
+      appendRaw(`<span class="bios-box">
+┌─────────────────────────────────────────────────────────────┐
+│              VISITOR ACCESS CONFIGURATION                   │
+│     Previous session restored — confirm or change level     │
+└─────────────────────────────────────────────────────────────┘</span>`);
+      await sleep(150);
+      showMenu(resumeIdx);
+
+      // Auto-confirm stored level after 2.5 s unless user interacts
+      let userActed = false;
+      const markActed = () => { userActed = true; };
+      document.addEventListener('keydown', markActed, { once: true });
+      document.addEventListener('click',   markActed, { once: true });
+      await sleep(2500);
+      if (!userActed) {
+        document.removeEventListener('keydown', markActed);
+        document.removeEventListener('click',   markActed);
+        confirmSelection(resumeIdx);
+      }
+      return;
+    }
+
+    // ── Full first-visit POST sequence ───────────────────────────
     for (const line of POST_LINES) {
-      accumulated += line.delay;
       await sleep(line.delay);
       appendLine(line.text, line.text.includes('[OK]') || line.text.includes('VERIFIED'));
     }
@@ -190,7 +231,12 @@
 └─────────────────────────────────────────────────────────────┘</span>`);
 
     await sleep(200);
-    showMenu();
+    showMenu(0);
+  }
+
+  // Escape HTML for plain text lines in appendRaw
+  function escLine(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   function appendLine(text, highlight = false) {
@@ -216,7 +262,7 @@
   }
 
   // ─── MENU ─────────────────────────────────────────────────────
-  function showMenu() {
+  function showMenu(preselect = 0) {
     const menu      = document.getElementById('bios-menu');
     menu.setAttribute('aria-hidden', 'false');
     menu.innerHTML  = `
@@ -245,6 +291,11 @@
         Use ↑/↓ arrow keys or click to select. Press ENTER to confirm.
         Press [ESC] to default to USER.
       </div>
+      <div class="bios-menu-note">
+        <span class="bios-note-label">&gt; NOTE:</span>
+        INTERFACE THEME, SECTION TERMINOLOGY AND ACCESS PRIVILEGES<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WILL ADAPT TO YOUR SELECTED ACCESS LEVEL.
+      </div>
     `;
 
     // Mouse click on items
@@ -260,7 +311,7 @@
       });
     });
 
-    highlightMenu(0);
+    highlightMenu(preselect);
     attachKeyHandler();
   }
 
@@ -343,6 +394,9 @@
     window.__accessLevel = level;
     biosCompleted = true;
 
+    // Persist selection so returning from sim pages restores the level
+    try { sessionStorage.setItem(SESSION_KEY, String(idx)); } catch (_) {}
+
     // Show persistent HUD badge
     showAccessBadge(level, levelName);
 
@@ -420,8 +474,30 @@
     if (biosCompleted) return;
     buildOverlay();
     hideSiteContent();
-    playPost();
+
+    // Check if returning from a sim page (flag set by sim pages on load,
+    // works for both the ← PORTFOLIO link AND the browser back button)
+    let resumeIdx = null;
+    try {
+      const stored  = sessionStorage.getItem(SESSION_KEY);
+      const fromSim = sessionStorage.getItem('arunjitk-from-sim') === '1';
+      if (stored !== null && fromSim) {
+        resumeIdx = Math.min(Math.max(parseInt(stored, 10), 0), 2);
+        // Consume the flag so a plain refresh doesn't keep resuming
+        sessionStorage.removeItem('arunjitk-from-sim');
+      }
+    } catch (_) {}
+
+    playPost(resumeIdx);
   }
+
+  // Handle bfcache restore (browser back button may skip DOMContentLoaded
+  // and serve the page from the back-forward cache without re-running scripts)
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && !biosCompleted) {
+      init();
+    }
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
