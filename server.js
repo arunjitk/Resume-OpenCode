@@ -210,12 +210,12 @@ app.post('/api/contact', async (req, res) => {
     const text = [
       '⚡ *New Portfolio Contact*',
       '',
-      `👤 *Name:*    ${name}`,
-      `📧 *Email:*   ${email}`,
-      `📋 *Subject:* ${subject || '—'}`,
+      `👤 *Name:*    ${escapeMd(name)}`,
+      `📧 *Email:*   ${escapeMd(email)}`,
+      `📋 *Subject:* ${escapeMd(subject || '—')}`,
       '',
       '💬 *Message:*',
-      message,
+      escapeMd(message),
       '',
       `🖥️ *IP:* \`${clientIp}\``,
       geoLine + ispLine + orgLine,
@@ -287,9 +287,9 @@ app.post('/api/download-lead', async (req, res) => {
       const text = [
         '📥 *Resume Download Request*',
         '',
-        `👤 *Name:*  ${name}`,
-        `📧 *Email:* ${email}`,
-        `📱 *Phone:* ${phone || '—'}`,
+        `👤 *Name:*  ${escapeMd(name)}`,
+        `📧 *Email:* ${escapeMd(email)}`,
+        `📱 *Phone:* ${escapeMd(phone || '—')}`,
         '',
         `🖥️ *IP:* \`${clientIp}\``,
         geoLine + ispLine + orgLine,
@@ -357,8 +357,8 @@ app.post('/api/hub-access', async (req, res) => {
       const text = [
         '🔐 *Cyber Security Hub Access*',
         '',
-        `👤 *Name:*  ${name}`,
-        `📧 *Email:* ${email}`,
+        `👤 *Name:*  ${escapeMd(name)}`,
+        `📧 *Email:* ${escapeMd(email)}`,
         '',
         `🖥️ *IP:* \`${clientIp}\``,
         geoLine + ispLine + orgLine,
@@ -423,8 +423,8 @@ app.post('/api/sim-access', async (req, res) => {
       const text = [
         '🎯 *Attack Simulation Access*',
         '',
-        `👤 *Name:*  ${name}`,
-        `📧 *Email:* ${email}`,
+        `👤 *Name:*  ${escapeMd(name)}`,
+        `📧 *Email:* ${escapeMd(email)}`,
         '',
         `🖥️ *IP:* \`${clientIp}\``,
         geoLine + ispLine + orgLine,
@@ -439,7 +439,9 @@ app.post('/api/sim-access', async (req, res) => {
         }
       );
 
-      if (!tgRes.ok) {
+      if (tgRes.ok) {
+        console.log(`[sim-access] Telegram notification sent for ${email}`);
+      } else {
         const body = await tgRes.json();
         console.error('[sim-access telegram]', body.description);
       }
@@ -724,4 +726,10 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+// Escape Telegram MarkdownV1 special characters in user-supplied text
+// so that *, _, `, [ in names/emails/messages don't break the parse
+function escapeMd(str) {
+  return String(str).replace(/([_*`\[])/g, '\\$1');
 }

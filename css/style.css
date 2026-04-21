@@ -112,7 +112,6 @@ a:hover { text-shadow: var(--glow-cyan); }
   z-index: 10000;
   will-change: transform;
   box-shadow: var(--glow-green);
-  mix-blend-mode: screen;
   transition: width 0.1s, height 0.1s;
 }
 
@@ -2527,6 +2526,23 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--danger-red
   color: #666;
   font-size: 11px;
   line-height: 1.6;
+}
+
+.bios-menu-note {
+  margin-top: 16px;
+  padding: 8px 12px;
+  border-left: 2px solid rgba(0, 255, 65, 0.35);
+  background: rgba(0, 255, 65, 0.04);
+  font-size: 11px;
+  line-height: 1.8;
+  color: #4a9e5c;
+  letter-spacing: 0.04em;
+}
+
+.bios-note-label {
+  color: #00ff41;
+  font-weight: bold;
+  margin-right: 4px;
 }
 
 /* ── BIOS CONFIRM LINES ──── */
