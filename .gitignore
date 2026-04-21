@@ -21,3 +21,6 @@ dist/
 
 # Local deploy script (has hardcoded IPs)
 deploy.sh
+
+# External projects
+FundLens/
