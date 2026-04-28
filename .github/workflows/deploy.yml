@@ -1,4 +1,4 @@
-name: Deploy to Hostinger VPS
+name: Deploy to VPS (Docker)
 
 on:
   push:
@@ -7,24 +7,19 @@ on:
 
 jobs:
   deploy:
-    name: Build & Deploy
+    name: Build & Deploy Docker Container
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build frontend
-        run: npm run build
+      # Optional: Add version tagging
+      - name: Generate version tag
+        id: vars
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "build_date=$(date -u +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
 
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -34,26 +29,43 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /var/www/resume
+            cd /root/Resume-OpenCode
 
-            # Pull latest code
-            git pull origin main
+            echo "=== Pulling latest code ==="
+            git fetch origin main
+            git reset --hard origin/main
 
-            # Install production dependencies
-            npm install --omit=dev
-
-            # Build frontend on the server
-            npm run build
-
-            # Copy .env if it doesn't exist (first deploy safety check)
+            echo "=== Checking .env file ==="
             if [ ! -f .env ]; then
-              echo "WARNING: .env file not found on server. Add it manually."
+              echo "WARNING: .env file not found. Creating minimal .env"
+              echo "PORT=3000" > .env
             fi
 
-            # Restart app
-            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
-            pm2 save
+            echo "=== Building and deploying Docker container ==="
+            cd /docker/resume
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
+
+            echo "=== Verifying deployment ==="
+            sleep 5
+            if docker ps | grep -q resume-resume-1; then
+              echo "✅ Container is running"
+              docker ps | grep resume
+            else
+              echo "❌ Container failed to start"
+              exit 1
+            fi
+
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
+
+            echo "=== Deployment complete ==="
 
       - name: Notify success
         if: success()
-        run: echo "Deployed successfully to https://arunjitk.org"
+        run: echo "✅ Deployed successfully to https://arunjitk.org"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Deployment failed"
