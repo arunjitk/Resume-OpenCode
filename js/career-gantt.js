@@ -145,6 +145,11 @@
         ? `${formatDate(m.start)} — PRESENT`
         : `${formatDate(m.start)} — ${formatDate(m.end)}`;
 
+      // Compact year-only range shown on mobile instead of full month+year
+      const startYear = Math.floor(m.start);
+      const endYear   = m.isActive ? 'NOW' : Math.floor(m.end);
+      const durationShort = `${startYear} – ${endYear}`;
+
       return `
         <div class="gantt-row" data-mission="${m.id}">
           <div class="gantt-row-label">
@@ -161,6 +166,7 @@
               <span class="gantt-bar-icon">${m.icon}</span>
               <span class="gantt-bar-role">${m.role}</span>
               <span class="gantt-bar-duration">${duration}</span>
+              <span class="gantt-bar-duration-short">${durationShort}</span>
               <div class="gantt-tool-chips" aria-hidden="true">${toolChips}</div>
               ${m.isActive ? '<span class="gantt-active-pulse" aria-hidden="true"></span>' : ''}
             </button>
