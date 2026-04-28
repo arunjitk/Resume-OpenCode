@@ -39,13 +39,14 @@ A single-page, 3D interactive portfolio website for Arunjit K — Senior Securit
 3. **Experience** — 4-item timeline with mission cards (Smarsh, Trellix, OLA, SISA)
 4. **Skills Matrix** — Filterable hex grid + 3D sphere
 5. **Armory** — Security tools and platforms grid
-6. **Projects** — GitHub-linked project cards (ThreatScope, ThreatTrace, ChittyApp)
+6. **Projects** — GitHub-linked project cards (ThreatScope, ThreatTrace, ChittyApp, FundLens)
 7. **Education** — Terminal-style education records
 8. **Certifications** — Holographic badge effect cards (13 certs)
 9. **Awards** — Slide-in award banners with citations
-10. **Languages** — Progress bars for English, Malayalam, Hindi
+10. **Languages** — Progress bars for English, Malayalam, Hindi, Tamil, Telugu
 11. **Interests** — Off-grid activities (Photography, Gaming)
-12. **Contact** — Terminal-style contact form with mailto
+12. **Field Notes** — Photography gallery (Lens Log)
+13. **Contact** — Terminal-style contact form with mailto
 
 ## Tech Stack
 
@@ -73,12 +74,16 @@ Resume-OpenCode/
 ├── ecosystem.config.js # PM2 production config
 ├── vercel.json          # Vercel deployment config
 ├── css/
-│   └── style.css       # Full stylesheet
+│   ├── style.css       # Main stylesheet
+│   └── sim.css         # Attack simulation styles
 ├── js/
 │   ├── rain.js        # Matrix digital rain effect
 │   ├── animations.js  # Scroll reveals, cursor, easter eggs, parallax
 │   ├── globe.js     # 3D wireframe globe (Three.js)
 │   ├── skills-sphere.js # 3D skills sphere (Three.js)
+│   ├── gallery.js     # Photography gallery
+│   ├── github-heatmap.js # GitHub contribution heatmap
+│   ├── attack-sim.js  # Attack simulation functionality
 │   └── chat.js      # Live chat client
 ├── api/
 │   ├── contact.js       # Contact form handler (also in server.js)
