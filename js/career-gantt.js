@@ -164,6 +164,7 @@
               aria-expanded="false"
             >
               <span class="gantt-bar-icon">${m.icon}</span>
+              <span class="gantt-bar-company">${m.company}</span>
               <span class="gantt-bar-role">${m.role}</span>
               <span class="gantt-bar-duration">${duration}</span>
               <span class="gantt-bar-duration-short">${durationShort}</span>
