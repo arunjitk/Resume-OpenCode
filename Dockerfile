@@ -26,6 +26,7 @@ COPY --from=builder /app/dist ./dist
 COPY js ./js
 COPY css ./css
 COPY ResumePDF ./ResumePDF
+COPY assets ./assets
 
 # Server entry point
 COPY server.js ./

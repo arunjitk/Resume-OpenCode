@@ -106,10 +106,11 @@ app.use(express.urlencoded({ extended: true }));
 // Serve built static files
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve non-bundled source directories (js, css, ResumePDF) from project root
+// Serve non-bundled source directories (js, css, ResumePDF, assets) from project root
 app.use('/js',        express.static(path.join(__dirname, 'js')));
 app.use('/css',       express.static(path.join(__dirname, 'css')));
 app.use('/ResumePDF', express.static(path.join(__dirname, 'ResumePDF')));
+app.use('/assets',    express.static(path.join(__dirname, 'assets')));
 
 // ── /api/contact ─────────────────────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {

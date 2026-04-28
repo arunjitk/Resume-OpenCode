@@ -553,15 +553,12 @@ section.section-panel .section-title {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SECTION DIVIDER SYSTEM — v5
-   .sec-div        — major: dim static track + repeating pulse stream
-   .sec-div--minor — same pulses, slightly lower opacity
-   .sec-div--signal — pulse stream + pulsing endpoint dot
+   SECTION DIVIDER SYSTEM — Single Pulse v6
+   .sec-div        — dim static track + single glowing pulse left→right loop
+   .sec-div--minor — subtler presence
+   .sec-div--signal — single pulse + pulsing endpoint dot
 
-   Animation technique: repeating-linear-gradient defines one 160px "tile"
-   containing a single bright pulse blob. background-position advances
-   exactly 160px per cycle → seamless, gap-free march with no JS.
-   Desktop: ~7-8 simultaneous pulses. Mobile: ~2-3. Always looks alive.
+   Single pulse travels across the full width of the divider.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .sec-div {
@@ -580,34 +577,31 @@ section.section-panel .section-title {
   opacity: 0.18;
 }
 
-/* Marching pulse stream — multiple crisp blobs moving left → right.
-   Tile: 160px. Pulse blob centered at 80px, 28px total soft width.
-   The animation shifts by exactly one tile (160px) per cycle → seamless loop. */
+/* Single glowing pulse traveling left → right */
 .sec-div::after {
   content: '';
   position: absolute;
   top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: repeating-linear-gradient(
+  width: 120px; height: 100%;
+  background: linear-gradient(
     90deg,
-    transparent               0px,
-    transparent               66px,
-    rgba(92, 184, 122, 0)     66px,
-    rgba(92, 184, 122, 0.35)  72px,
-    rgba(92, 184, 122, 0.80)  77px,
-    rgba(92, 184, 122, 1)     80px,
-    rgba(92, 184, 122, 0.80)  83px,
-    rgba(92, 184, 122, 0.35)  88px,
-    rgba(92, 184, 122, 0)     94px,
-    transparent               94px,
-    transparent               160px
+    transparent               0%,
+    rgba(92, 184, 122, 0)     10%,
+    rgba(92, 184, 122, 0.35)  25%,
+    rgba(92, 184, 122, 0.80)  45%,
+    rgba(92, 184, 122, 1)     50%,
+    rgba(92, 184, 122, 0.80)  55%,
+    rgba(92, 184, 122, 0.35)  75%,
+    rgba(92, 184, 122, 0)     90%,
+    transparent               100%
   );
-  animation: pulse-march 1.8s linear var(--div-delay, 0s) infinite;
+  animation: pulse-travel 2.5s ease-in-out infinite;
+  filter: blur(0.5px);
 }
 
-@keyframes pulse-march {
-  from { background-position: 0px 0; }
-  to   { background-position: 160px 0; }
+@keyframes pulse-travel {
+  0%   { transform: translateX(-120px); }
+  100% { transform: translateX(calc(100vw + 120px)); }
 }
 
 /* ── Minor: same pulse pattern, subtler presence ── */
@@ -636,19 +630,17 @@ section.section-panel .section-title {
 
 /* ── Light mode — deeper green ── */
 body.light-mode .sec-div::after {
-  background: repeating-linear-gradient(
+  background: linear-gradient(
     90deg,
-    transparent              0px,
-    transparent              66px,
-    rgba(45, 122, 78, 0)     66px,
-    rgba(45, 122, 78, 0.35)  72px,
-    rgba(45, 122, 78, 0.80)  77px,
-    rgba(45, 122, 78, 1)     80px,
-    rgba(45, 122, 78, 0.80)  83px,
-    rgba(45, 122, 78, 0.35)  88px,
-    rgba(45, 122, 78, 0)     94px,
-    transparent              94px,
-    transparent              160px
+    transparent              0%,
+    rgba(45, 122, 78, 0)     10%,
+    rgba(45, 122, 78, 0.35)  25%,
+    rgba(45, 122, 78, 0.80)  45%,
+    rgba(45, 122, 78, 1)     50%,
+    rgba(45, 122, 78, 0.80)  55%,
+    rgba(45, 122, 78, 0.35)  75%,
+    rgba(45, 122, 78, 0)     90%,
+    transparent              100%
   );
 }
 
@@ -2519,6 +2511,12 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
     gap: 0.6rem;
   }
 
+  /* Scroll prompt positioning for mobile */
+  .scroll-prompt {
+    bottom: 1.5rem;
+    font-size: 0.65rem;
+  }
+
   #hero-globe-container { width: 180px; height: 180px; margin-bottom: 0; }
 
   .mission-card { transform: none !important; }
@@ -4070,6 +4068,36 @@ body.light-mode .mobile-theme-label::after {
   justify-content: flex-end;
 }
 
+/* GitHub profile link in heatmap section */
+.gh-heatmap-footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--wb-border);
+}
+
+.gh-profile-link {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--wb-cyan);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.gh-profile-link:hover {
+  color: var(--wb-text);
+}
+
+.gh-profile-link .project-link-arrow {
+  transition: transform 0.2s;
+}
+
+.gh-profile-link:hover .project-link-arrow {
+  transform: translate(3px, -3px);
+}
+
 .gh-legend-label {
   font-family: var(--font-mono);
   font-size: 0.55rem;
@@ -4187,43 +4215,18 @@ body.light-mode .mobile-theme-label::after {
   filter: saturate(1) brightness(1);
 }
 
-/* ── Hover overlay with caption ───────────────────────────────── */
+/* ── Hover overlay with caption — HIDDEN per request ───────────────── */
 .gallery-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.78) 0%, transparent 55%);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 0.9rem 0.85rem 0.8rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.gallery-item:hover .gallery-overlay,
-.gallery-item:focus-visible .gallery-overlay {
-  opacity: 1;
+  display: none !important;
 }
 
 .gallery-caption {
-  font-family: var(--font-hud);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  color: #fff;
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  line-height: 1.3;
+  display: none !important;
 }
 
 .gallery-location {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.65);
-  letter-spacing: 0.08em;
+  display: none !important;
 }
-.gallery-location svg { flex-shrink: 0; opacity: 0.7; }
 
 /* ── Gallery View All Button ──────────────────────────────────── */
 .gallery-view-all-container {
@@ -4408,32 +4411,11 @@ body.light-mode .mobile-theme-label::after {
   outline: 1px solid rgba(255,255,255,0.4);
 }
 
-/* Caption + location */
-.lb-meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding: 0 2px;
-}
-
-.lb-caption {
-  font-family: var(--font-hud);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  color: rgba(255,255,255,0.85);
-  text-transform: uppercase;
-}
-
+/* Caption + location hidden per request */
+.lb-meta,
+.lb-caption,
 .lb-location-row {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.4);
-  letter-spacing: 0.08em;
+  display: none !important;
 }
 
 /* Prevent body scroll while lightbox is open */
