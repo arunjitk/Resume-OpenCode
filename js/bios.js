@@ -270,7 +270,7 @@
         <span class="bios-arrow">&gt;</span>
         <span class="bios-key">[ENTER]</span>
         <span class="bios-level-name">ROOT</span>
-        <span class="bios-level-desc">— Full system access. Portfolio initialized.</span>
+        <span class="bios-level-desc">— USER Theme. Portfolio initialized.</span>
         <span class="bios-cursor" aria-hidden="true">█</span>
       </div>
       <div class="bios-menu-hint">
