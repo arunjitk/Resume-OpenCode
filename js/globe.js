@@ -23,7 +23,7 @@
   // Globe wireframe
   const sphereGeo = new THREE.SphereGeometry(1, 24, 16);
   const wireframeMat = new THREE.MeshBasicMaterial({
-    color: 0x00FF41,
+    color: 0xFFFFFF,
     wireframe: true,
     transparent: true,
     opacity: 0.18,
@@ -34,15 +34,15 @@
   // Outer shell — subtle
   const outerGeo = new THREE.SphereGeometry(1.02, 12, 8);
   const outerMat = new THREE.MeshBasicMaterial({
-    color: 0x00F0FF,
+    color: 0xFFFFFF,
     wireframe: true,
     transparent: true,
-    opacity: 0.04,
+    opacity: 0.06,
   });
   scene.add(new THREE.Mesh(outerGeo, outerMat));
 
   // Lat/Lon grid lines
-  const lineMat = new THREE.LineBasicMaterial({ color: 0x00FF41, transparent: true, opacity: 0.35 });
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.35 });
 
   function latLine(lat) {
     const pts = [];
@@ -71,10 +71,17 @@
   [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].forEach(lon => gridGroup.add(lonLine(lon)));
   scene.add(gridGroup);
 
-  // Location nodes
+  // Operator home-base nodes
   const locations = [
-    { lat: 12.9716, lon: 77.5946, label: 'BANGALORE', color: 0x00FF41 },
-    { lat: 12.2958, lon: 76.6394, label: 'MYSORE', color: 0x00F0FF },
+    { lat: 12.9716, lon: 77.5946, label: 'BANGALORE', color: 0xFFFFFF },
+    { lat: 12.2958, lon: 76.6394, label: 'MYSORE',    color: 0xE0DDD8 },
+  ];
+
+  // Threat incident pins — India, USA, EU
+  const threatLocations = [
+    { lat: 20.5937, lon: 78.9629,  label: 'IN',  color: 0xFF2244 }, // India
+    { lat: 40.7128, lon: -74.0060, label: 'USA', color: 0xFF5500 }, // New York
+    { lat: 50.1109, lon:   8.6821, label: 'EU',  color: 0xFF2244 }, // Frankfurt
   ];
 
   function latLonToVec3(lat, lon, radius = 1.04) {
@@ -87,6 +94,7 @@
     );
   }
 
+  // Home-base dots
   const nodeGeo = new THREE.SphereGeometry(0.025, 8, 8);
   const nodes = locations.map(loc => {
     const mat = new THREE.MeshBasicMaterial({ color: loc.color });
@@ -97,7 +105,7 @@
     return { mesh: node, mat, color: loc.color, pos };
   });
 
-  // Pulse rings
+  // Pulse rings for home-base nodes
   const ringNodes = nodes.map(n => {
     const ringGeo = new THREE.RingGeometry(0.025, 0.05, 16);
     const ringMat = new THREE.MeshBasicMaterial({ color: n.color, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
@@ -108,11 +116,35 @@
     return { mesh: ring, mat: ringMat, t: Math.random() * Math.PI * 2 };
   });
 
-  // Pulse line between nodes
+  // Threat pin dots — slightly larger, bright red/orange
+  const threatNodeGeo = new THREE.SphereGeometry(0.032, 8, 8);
+  const threatNodes = threatLocations.map(loc => {
+    const mat = new THREE.MeshBasicMaterial({ color: loc.color });
+    const node = new THREE.Mesh(threatNodeGeo, mat);
+    const pos = latLonToVec3(loc.lat, loc.lon);
+    node.position.copy(pos);
+    scene.add(node);
+    return { mesh: node, mat, color: loc.color, pos };
+  });
+
+  // Expanding pulse rings for threat pins (two staggered rings each)
+  const threatRings = threatNodes.flatMap((n, i) => {
+    return [0, Math.PI].map(offset => {
+      const ringGeo = new THREE.RingGeometry(0.03, 0.055, 20);
+      const ringMat = new THREE.MeshBasicMaterial({ color: n.color, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.copy(n.pos);
+      ring.lookAt(new THREE.Vector3(0, 0, 0));
+      scene.add(ring);
+      return { mesh: ring, mat: ringMat, t: offset + i * 0.7 };
+    });
+  });
+
+  // Pulse line between home-base nodes
   const linePts = [latLonToVec3(12.9716, 77.5946, 1.05), latLonToVec3(12.2958, 76.6394, 1.05)];
   const connLine = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(linePts),
-    new THREE.LineBasicMaterial({ color: 0x00FF41, transparent: true, opacity: 0.5 })
+    new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 })
   );
   scene.add(connLine);
 
@@ -137,17 +169,28 @@
     gridGroup.rotation.y = globe.rotation.y;
     gridGroup.rotation.x = globe.rotation.x;
 
-    // Rotate nodes with globe
-    nodes.forEach(n => {
+    // Rotate all nodes with globe
+    const allNodes = [...nodes, ...threatNodes];
+    allNodes.forEach(n => {
       n.mesh.rotation.copy(globe.rotation);
     });
 
-    // Pulse rings
+    // Home-base pulse rings
     ringNodes.forEach(r => {
       r.t += 0.04;
       const s = 1 + Math.sin(r.t) * 0.5;
       r.mesh.scale.set(s, s, s);
       r.mat.opacity = 0.6 * (1 - Math.abs(Math.sin(r.t)));
+      r.mesh.rotation.copy(globe.rotation);
+    });
+
+    // Threat pin expanding pulse rings — faster, more aggressive
+    threatRings.forEach(r => {
+      r.t += 0.065;
+      const s = 1 + (r.t % (Math.PI * 2)) / (Math.PI * 2) * 2.5;
+      r.mesh.scale.set(s, s, s);
+      r.mat.opacity = Math.max(0, 0.75 * (1 - (r.t % (Math.PI * 2)) / (Math.PI * 2)));
+      r.mesh.rotation.copy(globe.rotation);
     });
 
     renderer.render(scene, camera);

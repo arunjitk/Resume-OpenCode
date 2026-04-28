@@ -120,6 +120,9 @@
         // when the browser auto-reconnects after a transient network drop).
         if (msg.ts && msg.ts <= lastMsgTs) return;
         if (msg.ts) lastMsgTs = msg.ts;
+        // Skip visitor's own messages replayed from server history — the client
+        // already appended them locally when they were sent.
+        if (msg.from === 'visitor') return;
         appendMsg(msg.from, msg.name, msg.text);
         if (!isOpen) bumpBadge();
       } catch (_) {}
@@ -129,6 +132,13 @@
       // Browser auto-reconnects SSE automatically after a short delay.
       // Show a status indicator so the user knows a reconnect is in progress.
       setStatus('reconnecting');
+      // If the connection has fully closed (CLOSED state), tear it down so the
+      // next connectSSE() call creates a fresh EventSource immediately instead
+      // of waiting on a stale reconnect attempt.
+      if (evtSource && evtSource.readyState === EventSource.CLOSED) {
+        evtSource.close();
+        evtSource = null;
+      }
     };
   }
 

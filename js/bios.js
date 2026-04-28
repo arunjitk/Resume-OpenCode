@@ -197,12 +197,12 @@
       appendRaw(`<span class="bios-box">
 ┌─────────────────────────────────────────────────────────────┐
 │              VISITOR ACCESS CONFIGURATION                   │
-│     Previous session restored — confirm or change level     │
+│          Previous session restored — press ENTER            │
 └─────────────────────────────────────────────────────────────┘</span>`);
       await sleep(150);
-      showMenu(resumeIdx);
+      showMenu();
 
-      // Auto-confirm stored level after 2.5 s unless user interacts
+      // Auto-confirm after 2.5 s unless user interacts first
       let userActed = false;
       const markActed = () => { userActed = true; };
       document.addEventListener('keydown', markActed, { once: true });
@@ -211,7 +211,7 @@
       if (!userActed) {
         document.removeEventListener('keydown', markActed);
         document.removeEventListener('click',   markActed);
-        confirmSelection(resumeIdx);
+        confirmSelection();
       }
       return;
     }
@@ -231,7 +231,7 @@
 └─────────────────────────────────────────────────────────────┘</span>`);
 
     await sleep(200);
-    showMenu(0);
+    showMenu();
   }
 
   // Escape HTML for plain text lines in appendRaw
@@ -262,120 +262,56 @@
   }
 
   // ─── MENU ─────────────────────────────────────────────────────
-  function showMenu(preselect = 0) {
-    const menu      = document.getElementById('bios-menu');
+  function showMenu() {
+    const menu = document.getElementById('bios-menu');
     menu.setAttribute('aria-hidden', 'false');
-    menu.innerHTML  = `
-      <div class="bios-menu-item" data-idx="0">
-        <span class="bios-arrow">›</span>
-        <span class="bios-key">[1]</span>
-        <span class="bios-level-name">USER</span>
-        <span class="bios-level-desc">— Public access. Standard portfolio view.</span>
-        <span class="bios-cursor" aria-hidden="true">█</span>
-      </div>
-      <div class="bios-menu-item" data-idx="1">
-        <span class="bios-arrow">›</span>
-        <span class="bios-key">[2]</span>
-        <span class="bios-level-name">ANALYST</span>
-        <span class="bios-level-desc">— Authenticated access. Extended threat context.</span>
-        <span class="bios-cursor" aria-hidden="true">█</span>
-      </div>
-      <div class="bios-menu-item" data-idx="2">
-        <span class="bios-arrow">›</span>
-        <span class="bios-key">[3]</span>
+    menu.innerHTML = `
+      <div class="bios-menu-item bios-selected" data-idx="0">
+        <span class="bios-arrow">&gt;</span>
+        <span class="bios-key">[ENTER]</span>
         <span class="bios-level-name">ROOT</span>
-        <span class="bios-level-desc">— Full system access. Classified data unlocked.</span>
+        <span class="bios-level-desc">— Full system access. Portfolio initialized.</span>
         <span class="bios-cursor" aria-hidden="true">█</span>
       </div>
       <div class="bios-menu-hint">
-        Use ↑/↓ arrow keys or click to select. Press ENTER to confirm.
-        Press [ESC] to default to USER.
-      </div>
-      <div class="bios-menu-note">
-        <span class="bios-note-label">&gt; NOTE:</span>
-        INTERFACE THEME, SECTION TERMINOLOGY AND ACCESS PRIVILEGES<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WILL ADAPT TO YOUR SELECTED ACCESS LEVEL.
+        Press ENTER or click to initialize session.
       </div>
     `;
 
-    // Mouse click on items
-    menu.querySelectorAll('.bios-menu-item').forEach(item => {
-      item.addEventListener('click', () => {
-        selectedIdx = +item.dataset.idx;
-        highlightMenu(selectedIdx);
-        confirmSelection(selectedIdx);
-      });
-      item.addEventListener('mouseenter', () => {
-        selectedIdx = +item.dataset.idx;
-        highlightMenu(selectedIdx);
-      });
+    menu.querySelector('.bios-menu-item').addEventListener('click', () => {
+      confirmSelection();
     });
 
-    highlightMenu(preselect);
     attachKeyHandler();
-  }
-
-  function highlightMenu(idx) {
-    selectedIdx = idx;
-    const items = document.querySelectorAll('.bios-menu-item');
-    items.forEach((item, i) => {
-      item.classList.toggle('bios-selected', i === idx);
-      item.querySelector('.bios-cursor').style.display  = i === idx ? 'inline' : 'none';
-      item.querySelector('.bios-arrow').textContent     = i === idx ? '>' : ' ';
-    });
   }
 
   function attachKeyHandler() {
     if (keyHandler) document.removeEventListener('keydown', keyHandler);
     keyHandler = (e) => {
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault();
-          highlightMenu((selectedIdx + 2) % 3);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          highlightMenu((selectedIdx + 1) % 3);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          confirmSelection(selectedIdx);
-          break;
-        case '1':
-          confirmSelection(0);
-          break;
-        case '2':
-          confirmSelection(1);
-          break;
-        case '3':
-          confirmSelection(2);
-          break;
-        case 'Escape':
-          confirmSelection(0);
-          break;
+      if (e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        confirmSelection();
       }
     };
     document.addEventListener('keydown', keyHandler);
   }
 
   // ─── CONFIRM SELECTION ────────────────────────────────────────
-  async function confirmSelection(idx) {
+  async function confirmSelection() {
     // Remove keyboard handler immediately to prevent double-fire
     if (keyHandler) {
       document.removeEventListener('keydown', keyHandler);
       keyHandler = null;
     }
 
-    const level     = LEVELS[idx];
-    const levelName = LEVEL_NAMES[idx];
-    const confirm   = document.getElementById('bios-confirm');
+    const confirm = document.getElementById('bios-confirm');
 
     // Disable menu pointer events
     if (menuEl) menuEl.style.pointerEvents = 'none';
 
     await sleep(300);
     confirm.innerHTML = `
-      <div class="bios-line bios-confirm-line">&gt; ACCESS LEVEL: <span class="bios-ok">${levelName}</span> — CONFIRMED</div>
+      <div class="bios-line bios-confirm-line">&gt; ACCESS LEVEL: <span class="bios-ok">ROOT</span> — CONFIRMED</div>
     `;
     await sleep(400);
     confirm.innerHTML += `<div class="bios-line bios-confirm-line">&gt; INITIALIZING USER SESSION...</div>`;
@@ -386,19 +322,19 @@
     // CRT collapse
     await crtCollapse();
 
-    // Apply theme and terminology
-    applyTheme(level);
-    applyTerminology(level);
+    // ROOT option follows the USER (civilian) theme
+    applyTheme('civilian');
+    applyTerminology('civilian');
 
     // Set global access level
-    window.__accessLevel = level;
+    window.__accessLevel = 'civilian';
     biosCompleted = true;
 
-    // Persist selection so returning from sim pages restores the level
-    try { sessionStorage.setItem(SESSION_KEY, String(idx)); } catch (_) {}
+    // Persist as civilian (index 0) so sim pages restore correctly
+    try { sessionStorage.setItem(SESSION_KEY, '0'); } catch (_) {}
 
-    // Show persistent HUD badge
-    showAccessBadge(level, levelName);
+    // Show badge with ROOT label but civilian styling
+    showAccessBadge('civilian', 'ROOT');
 
     // Reveal site
     revealSiteContent();

@@ -270,6 +270,12 @@
   bootLines.forEach((line, i) => {
     line.style.animationDelay = `${i * 280}ms`;
   });
+  // Boot cursor appears after all lines have rendered
+  const bootCursor = document.querySelector('.boot-cursor-blink');
+  if (bootCursor) {
+    const cursorDelay = bootLines.length * 280 + 200;
+    bootCursor.style.animationDelay = `${cursorDelay}ms, ${cursorDelay}ms`;
+  }
 
   // ─── MOBILE NAV ──────────────────────────────────────────────
   const hamburger = document.getElementById('nav-hamburger');
@@ -388,6 +394,16 @@
 
   document.getElementById('terminal-close')?.addEventListener('click', () => {
     termOverlay.classList.remove('open');
+  });
+
+  // Terminal FAB — click to open (mobile + desktop alternative to backtick)
+  document.getElementById('terminal-fab')?.addEventListener('click', () => {
+    if (!termOverlay.classList.contains('open')) {
+      termOverlay.classList.add('open');
+      termInput?.focus();
+      termLog(null, 'ARUNJIT.K SECURE TERMINAL v1.0', 'output');
+      termLog(null, 'Type "help" for available commands.', 'output');
+    }
   });
 
   // ─── SKILL FILTER ─────────────────────────────────────────────
@@ -827,6 +843,20 @@
         status.style.display = 'block';
       }
     });
+  }
+
+  // ─── FOOTER UPTIME COUNTER ───────────────────────────────────
+  const uptimeEl = document.getElementById('footer-uptime');
+  if (uptimeEl) {
+    const startTime = Date.now();
+    function fmtUptime(ms) {
+      const s = Math.floor(ms / 1000);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }
+    setInterval(() => { uptimeEl.textContent = fmtUptime(Date.now() - startTime); }, 1000);
   }
 
 })();

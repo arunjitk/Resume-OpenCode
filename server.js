@@ -73,12 +73,21 @@ function saveSessions() {
   } catch (_) {}
 }
 
-// ── Safe SSE write — returns false and nulls session.res on failure ──────────
+// ── Safe SSE write — only nulls session.res when the connection is definitively
+//    closed (destroyed/ended).  Never nulls on back-pressure (writable=false)
+//    because that would orphan a live browser connection that never reconnects.
 function sseWrite(session, data) {
   if (!session || !session.res) return false;
+  const r = session.res;
+  // Definitively closed — clean up and report
+  if (r.destroyed || r.writableEnded || r.writableFinished) {
+    session.res = null;
+    return false;
+  }
   try {
-    if (!session.res.writable) { session.res = null; return false; }
-    const ok = session.res.write(data);
+    const ok = r.write(data);
+    // ok===false means TCP back-pressure: data IS buffered and will be sent.
+    // Do NOT null session.res here — the connection is still alive.
     return ok;
   } catch (err) {
     console.error('[SSE write error]', err.message);
@@ -594,6 +603,10 @@ app.get('/api/telegram/set-webhook', async (req, res) => {
   const data = await r.json();
   res.json(data);
 });
+
+// ── Simulation pages — not part of the Vite build, served from project root ──
+app.get('/malware-simulation.html',    (req, res) => res.sendFile(path.join(__dirname, 'malware-simulation.html')));
+app.get('/ransomware-simulation.html', (req, res) => res.sendFile(path.join(__dirname, 'ransomware-simulation.html')));
 
 // ── FALLBACK — serve index.html for any unmatched route ───────────────────────
 app.get('*', (req, res) => {
