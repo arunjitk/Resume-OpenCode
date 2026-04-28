@@ -167,6 +167,31 @@
 
   document.querySelectorAll('.lang-item').forEach(el => langObs.observe(el));
 
+  // ─── SECTION DIVIDER STAGGER ─────────────────────────────────
+  // Stagger each divider's pulse phase so they don't all fire in sync.
+  // Cycle is 1.8s — spread delays across it with a 0.25s step per divider.
+  // Negative delay = already mid-cycle on page load (no dead wait).
+  document.querySelectorAll('.sec-div').forEach((el, i) => {
+    const delay = -((i * 0.25) % 1.8);
+    el.style.setProperty('--div-delay', `${delay}s`);
+  });
+
+  // ─── SCROLL PROMPT FADE-OUT ──────────────────────────────────
+  const scrollPrompt = document.querySelector('.scroll-prompt');
+  if (scrollPrompt) {
+    const heroEl = document.getElementById('hero');
+    const fadeScrollPrompt = () => {
+      const threshold = heroEl ? heroEl.offsetHeight * 0.4 : window.innerHeight * 0.4;
+      const ratio = Math.max(0, 1 - window.scrollY / threshold);
+      scrollPrompt.style.opacity = (ratio * 0.55).toFixed(3);
+      if (window.scrollY > threshold) {
+        scrollPrompt.style.display = 'none';
+        window.removeEventListener('scroll', fadeScrollPrompt);
+      }
+    };
+    window.addEventListener('scroll', fadeScrollPrompt, { passive: true });
+  }
+
   // ─── 3D CARD PARALLAX ────────────────────────────────────────
   function bindParallax(cards) {
     cards.forEach(card => {
@@ -481,7 +506,7 @@
   });
 
   if (dlmForm) {
-    dlmForm.addEventListener('submit', async e => {
+    dlmForm.addEventListener('submit', e => {
       e.preventDefault();
 
       const name  = document.getElementById('dlm-name').value.trim();
@@ -499,37 +524,24 @@
       dlmSubmit.textContent = '> VERIFYING IDENTITY...';
       dlmStatus.style.display = 'none';
 
-      try {
-        const res = await fetch('/api/download-lead', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ name, email, phone }),
-        });
+      // Fire Telegram notification — fire-and-forget, never blocks the download
+      fetch('/api/download-lead', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone }),
+      }).catch(() => {});
 
-        let data = {};
-        try { data = await res.json(); } catch { /* ignore */ }
-
-        if (res.ok && data.success) {
-          dlmSubmit.textContent   = '> AUTHORIZED ✓ — EXTRACTING...';
-          dlmSubmit.style.color   = 'var(--matrix-green)';
-          dlmStatus.textContent   = '> ACCESS GRANTED. FILE EXTRACTION INITIATED.';
-          dlmStatus.style.color   = 'var(--matrix-green)';
-          dlmStatus.style.display = 'block';
-          setTimeout(() => {
-            triggerDownload();
-            setTimeout(closeDownloadModal, 1500);
-          }, 800);
-        } else {
-          throw new Error(data.error || 'Verification failed');
-        }
-      } catch (err) {
-        dlmSubmit.textContent   = '> [AUTHORIZE & EXTRACT]';
-        dlmSubmit.style.color   = '';
-        dlmSubmit.disabled      = false;
-        dlmStatus.textContent   = `> ACCESS DENIED: ${err.message}`;
-        dlmStatus.style.color   = '#ff4444';
+      // Always grant access after brief delay regardless of API status
+      setTimeout(() => {
+        dlmSubmit.textContent   = '> AUTHORIZED ✓ — EXTRACTING...';
+        dlmSubmit.style.color   = 'var(--matrix-green)';
+        dlmStatus.textContent   = '> ACCESS GRANTED. FILE EXTRACTION INITIATED.';
+        dlmStatus.style.color   = 'var(--matrix-green)';
         dlmStatus.style.display = 'block';
-      }
+        setTimeout(() => {
+          triggerDownload();
+          setTimeout(closeDownloadModal, 1500);
+        }, 800);
+      }, 700);
     });
   }
 
@@ -575,7 +587,7 @@
   });
 
   if (hamForm) {
-    hamForm.addEventListener('submit', async e => {
+    hamForm.addEventListener('submit', e => {
       e.preventDefault();
 
       const name  = document.getElementById('ham-name').value.trim();
@@ -592,37 +604,24 @@
       hamSubmit.textContent = '> VERIFYING IDENTITY...';
       hamStatus.style.display = 'none';
 
-      try {
-        const res = await fetch('/api/hub-access', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ name, email }),
-        });
+      // Fire Telegram notification — fire-and-forget, never blocks hub access
+      fetch('/api/hub-access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      }).catch(() => {});
 
-        let data = {};
-        try { data = await res.json(); } catch { /* ignore */ }
-
-        if (res.ok && data.success) {
-          hamSubmit.textContent   = '> AUTHORIZED ✓ — CONNECTING...';
-          hamSubmit.style.color   = 'var(--cyber-cyan)';
-          hamStatus.textContent   = '> ACCESS GRANTED. REDIRECTING TO CYBER SECURITY HUB...';
-          hamStatus.style.color   = 'var(--cyber-cyan)';
-          hamStatus.style.display = 'block';
-          setTimeout(() => {
-            window.open(HUB_URL, '_blank', 'noopener,noreferrer');
-            setTimeout(closeHubModal, 800);
-          }, 900);
-        } else {
-          throw new Error(data.error || 'Verification failed');
-        }
-      } catch (err) {
-        hamSubmit.textContent   = '> [AUTHORIZE & ACCESS HUB]';
-        hamSubmit.style.color   = '';
-        hamSubmit.disabled      = false;
-        hamStatus.textContent   = `> ACCESS DENIED: ${err.message}`;
-        hamStatus.style.color   = '#ff4444';
+      // Always grant access after brief delay regardless of API status
+      setTimeout(() => {
+        hamSubmit.textContent   = '> AUTHORIZED ✓ — CONNECTING...';
+        hamSubmit.style.color   = 'var(--cyber-cyan)';
+        hamStatus.textContent   = '> ACCESS GRANTED. REDIRECTING TO CYBER SECURITY HUB...';
+        hamStatus.style.color   = 'var(--cyber-cyan)';
         hamStatus.style.display = 'block';
-      }
+        setTimeout(() => {
+          window.open(HUB_URL, '_blank', 'noopener,noreferrer');
+          setTimeout(closeHubModal, 800);
+        }, 900);
+      }, 700);
     });
   }
 
@@ -731,7 +730,7 @@
 
   // ── Authorization form submit ────────────────────────────────
   if (samForm) {
-    samForm.addEventListener('submit', async e => {
+    samForm.addEventListener('submit', e => {
       e.preventDefault();
 
       const name  = document.getElementById('sam-name').value.trim();
@@ -748,34 +747,21 @@
       samSubmit.textContent   = '> VERIFYING CLEARANCE...';
       samStatus.style.display = 'none';
 
-      try {
-        const res = await fetch('/api/sim-access', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ name, email }),
-        });
+      // Fire Telegram notification — fire-and-forget, never blocks sim launch
+      fetch('/api/sim-access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      }).catch(() => {});
 
-        let data = {};
-        try { data = await res.json(); } catch { /* ignore */ }
-
-        if (res.ok && data.success) {
-          samSubmit.textContent   = '> AUTHORIZED ✓ — LAUNCHING...';
-          samSubmit.style.color   = 'var(--neon-magenta)';
-          samStatus.textContent   = '> CLEARANCE GRANTED. LOADING INCIDENT REPLAY...';
-          samStatus.style.color   = 'var(--matrix-green)';
-          samStatus.style.display = 'block';
-          setTimeout(() => { window.location.href = _simDestination; }, 1000);
-        } else {
-          throw new Error(data.error || 'Verification failed');
-        }
-      } catch (err) {
-        samSubmit.textContent   = '> [AUTHORIZE & LAUNCH SIM]';
-        samSubmit.style.color   = '';
-        samSubmit.disabled      = false;
-        samStatus.textContent   = `> ACCESS DENIED: ${err.message}`;
-        samStatus.style.color   = '#ff4444';
+      // Always grant clearance after brief delay regardless of API status
+      setTimeout(() => {
+        samSubmit.textContent   = '> AUTHORIZED ✓ — LAUNCHING...';
+        samSubmit.style.color   = 'var(--neon-magenta)';
+        samStatus.textContent   = '> CLEARANCE GRANTED. LOADING INCIDENT REPLAY...';
+        samStatus.style.color   = 'var(--matrix-green)';
         samStatus.style.display = 'block';
-      }
+        setTimeout(() => { window.location.href = _simDestination; }, 1000);
+      }, 700);
     });
   }
 
@@ -847,6 +833,51 @@
       }
     });
   }
+
+  // ─── CERT EXPAND / COLLAPSE ──────────────────────────────────
+  const certsExpandBtn = document.getElementById('certs-expand-btn');
+  if (certsExpandBtn) {
+    const certsGrid = certsExpandBtn.closest('.certs-grid');
+    certsExpandBtn.addEventListener('click', () => {
+      const expanded = certsGrid.classList.toggle('expanded');
+      certsExpandBtn.setAttribute('aria-expanded', String(expanded));
+      if (expanded) {
+        // Scroll gently so newly visible certs are in view
+        setTimeout(() => certsGrid.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+      }
+    });
+  }
+
+  // ─── LIGHT / DARK MODE TOGGLE ─────────────────────────────────
+  (function () {
+    const toggle = document.getElementById('theme-toggle');
+    if (!toggle) return;
+
+    // Restore saved preference
+    if (localStorage.getItem('color-scheme') === 'light') {
+      document.body.classList.add('light-mode');
+    }
+
+    function applyThemeToggle() {
+      const isLight = document.body.classList.toggle('light-mode');
+      localStorage.setItem('color-scheme', isLight ? 'light' : 'dark');
+    }
+
+    toggle.addEventListener('click', applyThemeToggle);
+
+    // Mobile menu theme toggle
+    const mobileToggle = document.getElementById('mobile-theme-toggle');
+    if (mobileToggle) {
+      mobileToggle.addEventListener('click', () => {
+        applyThemeToggle();
+        // Close mobile menu after toggling
+        const mobileMenu = document.getElementById('mobile-menu');
+        const hamburger = document.getElementById('nav-hamburger');
+        if (mobileMenu) mobileMenu.classList.remove('open');
+        if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
+      });
+    }
+  })();
 
   // ─── FOOTER UPTIME COUNTER ───────────────────────────────────
   const uptimeEl = document.getElementById('footer-uptime');

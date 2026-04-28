@@ -8,6 +8,19 @@
   const W = container.clientWidth;
   const H = container.clientHeight;
 
+  // ─── THEME DETECTION ─────────────────────────────────────────────
+  function isLightMode() {
+    return document.body.classList.contains('light-mode');
+  }
+
+  function getGlobeColor() {
+    return isLightMode() ? 0x1A1A1A : 0xFFFFFF;  // Dark gray for light mode, white for dark mode
+  }
+
+  function getGridColor() {
+    return isLightMode() ? 0x333333 : 0xFFFFFF;  // Dark gray grid for light mode
+  }
+
   // Renderer
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -23,7 +36,7 @@
   // Globe wireframe
   const sphereGeo = new THREE.SphereGeometry(1, 24, 16);
   const wireframeMat = new THREE.MeshBasicMaterial({
-    color: 0xFFFFFF,
+    color: getGlobeColor(),
     wireframe: true,
     transparent: true,
     opacity: 0.18,
@@ -34,7 +47,7 @@
   // Outer shell — subtle
   const outerGeo = new THREE.SphereGeometry(1.02, 12, 8);
   const outerMat = new THREE.MeshBasicMaterial({
-    color: 0xFFFFFF,
+    color: getGlobeColor(),
     wireframe: true,
     transparent: true,
     opacity: 0.06,
@@ -42,7 +55,7 @@
   scene.add(new THREE.Mesh(outerGeo, outerMat));
 
   // Lat/Lon grid lines
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.35 });
+  const lineMat = new THREE.LineBasicMaterial({ color: getGridColor(), transparent: true, opacity: 0.35 });
 
   function latLine(lat) {
     const pts = [];
@@ -73,8 +86,8 @@
 
   // Operator home-base nodes
   const locations = [
-    { lat: 12.9716, lon: 77.5946, label: 'BANGALORE', color: 0xFFFFFF },
-    { lat: 12.2958, lon: 76.6394, label: 'MYSORE',    color: 0xE0DDD8 },
+    { lat: 12.9716, lon: 77.5946, label: 'BANGALORE', darkColor: 0xFFFFFF, lightColor: 0x2A2A2A },
+    { lat: 12.2958, lon: 76.6394, label: 'MYSORE',    darkColor: 0xE0DDD8, lightColor: 0x3A3A3A },
   ];
 
   // Threat incident pins — India, USA, EU
@@ -97,23 +110,25 @@
   // Home-base dots
   const nodeGeo = new THREE.SphereGeometry(0.025, 8, 8);
   const nodes = locations.map(loc => {
-    const mat = new THREE.MeshBasicMaterial({ color: loc.color });
+    const nodeColor = isLightMode() ? loc.lightColor : loc.darkColor;
+    const mat = new THREE.MeshBasicMaterial({ color: nodeColor });
     const node = new THREE.Mesh(nodeGeo, mat);
     const pos = latLonToVec3(loc.lat, loc.lon);
     node.position.copy(pos);
     scene.add(node);
-    return { mesh: node, mat, color: loc.color, pos };
+    return { mesh: node, mat, darkColor: loc.darkColor, lightColor: loc.lightColor, pos };
   });
 
   // Pulse rings for home-base nodes
   const ringNodes = nodes.map(n => {
     const ringGeo = new THREE.RingGeometry(0.025, 0.05, 16);
-    const ringMat = new THREE.MeshBasicMaterial({ color: n.color, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+    const ringColor = isLightMode() ? n.lightColor : n.darkColor;
+    const ringMat = new THREE.MeshBasicMaterial({ color: ringColor, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.position.copy(n.pos);
     ring.lookAt(new THREE.Vector3(0, 0, 0));
     scene.add(ring);
-    return { mesh: ring, mat: ringMat, t: Math.random() * Math.PI * 2 };
+    return { mesh: ring, mat: ringMat, darkColor: n.darkColor, lightColor: n.lightColor, t: Math.random() * Math.PI * 2 };
   });
 
   // Threat pin dots — slightly larger, bright red/orange
@@ -142,9 +157,10 @@
 
   // Pulse line between home-base nodes
   const linePts = [latLonToVec3(12.9716, 77.5946, 1.05), latLonToVec3(12.2958, 76.6394, 1.05)];
+  const connLineMat = new THREE.LineBasicMaterial({ color: getGridColor(), transparent: true, opacity: 0.5 });
   const connLine = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(linePts),
-    new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 })
+    connLineMat
   );
   scene.add(connLine);
 
@@ -205,4 +221,25 @@
     camera.updateProjectionMatrix();
     renderer.setSize(W2, H2);
   });
+
+  // ─── THEME TOGGLE LISTENER ───────────────────────────────────────
+  // Update globe colors when light/dark mode is toggled
+  const obs = new MutationObserver(() => {
+    const isLight = isLightMode();
+    wireframeMat.color.setHex(getGlobeColor());
+    outerMat.color.setHex(getGlobeColor());
+    lineMat.color.setHex(getGridColor());
+    connLineMat.color.setHex(getGridColor());
+
+    // Update node colors
+    nodes.forEach(n => {
+      n.mat.color.setHex(isLight ? n.lightColor : n.darkColor);
+    });
+
+    // Update ring colors
+    ringNodes.forEach(r => {
+      r.mat.color.setHex(isLight ? r.lightColor : r.darkColor);
+    });
+  });
+  obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 })();

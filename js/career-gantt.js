@@ -163,11 +163,8 @@
               aria-label="Click to expand ${m.company} mission briefing"
               aria-expanded="false"
             >
-              <span class="gantt-bar-icon">${m.icon}</span>
-              <span class="gantt-bar-role">${m.role}</span>
-              <span class="gantt-bar-duration">${duration}</span>
+              <span class="gantt-bar-company" style="color:${m.color}">${companyAbbr(m.company)}</span>
               <span class="gantt-bar-duration-short">${durationShort}</span>
-              <div class="gantt-tool-chips" aria-hidden="true">${toolChips}</div>
               ${m.isActive ? '<span class="gantt-active-pulse" aria-hidden="true"></span>' : ''}
             </button>
           </div>

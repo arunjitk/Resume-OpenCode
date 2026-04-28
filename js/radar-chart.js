@@ -23,6 +23,11 @@
   let chartInstance = null;
   let initialized   = false;
 
+  // ─── THEME DETECTION ──────────────────────────────────────────
+  function isLightMode() {
+    return document.body.classList.contains('light-mode');
+  }
+
   // ─── HELPERS ──────────────────────────────────────────────────
   function getRainColor() {
     return getComputedStyle(document.documentElement)
@@ -50,6 +55,10 @@
 
     const [r, g, b] = getRainColorRgb();
     const primary   = getRainColor();
+    const isLight   = isLightMode();
+    const tooltipBg = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(0,8,0,0.96)';
+    const tooltipTextColor = isLight ? '#18160F' : '#C8E6C9';
+    const labelColor = isLight ? '#18160F' : '#C8E6C9';
 
     chartInstance = new Chart(canvas.getContext('2d'), {
       type: 'radar',
@@ -67,7 +76,7 @@
           pointBorderWidth:     1,
           pointRadius:          5,
           pointHoverRadius:     7,
-          pointHoverBackgroundColor: '#fff',
+          pointHoverBackgroundColor: isLight ? '#18160F' : '#fff',
         }],
       },
       options: {
@@ -80,11 +89,11 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(0,8,0,0.96)',
+            backgroundColor: tooltipBg,
             borderColor:     primary,
             borderWidth:     1,
             titleColor:      primary,
-            bodyColor:       '#C8E6C9',
+            bodyColor:       tooltipTextColor,
             displayColors:   false,
             titleFont:       { family: 'Orbitron', size: 11 },
             bodyFont:        { family: 'Share Tech Mono', size: 12 },
@@ -112,7 +121,7 @@
               lineWidth: 1,
             },
             pointLabels: {
-              color: '#C8E6C9',
+              color: labelColor,
               font: {
                 family: 'Share Tech Mono',
                 size:   10,
@@ -141,19 +150,13 @@
   }
 
   // ─── PALETTE-CHANGE RE-RENDER ──────────────────────────────────
-  // Observe data-access-level attribute changes on <html>
+  // Observe light-mode class changes on body for theme switching
   const mutObs = new MutationObserver(() => {
-    if (!chartInstance) return;
-    const [r, g, b] = getRainColorRgb();
-    const primary   = getRainColor();
-    const ds        = chartInstance.data.datasets[0];
-    ds.backgroundColor = rgba(r, g, b, 0.10);
-    ds.borderColor     = primary;
-    chartInstance.options.scales.r.grid.color       = rgba(r, g, b, 0.12);
-    chartInstance.options.scales.r.angleLines.color = rgba(r, g, b, 0.18);
-    chartInstance.update('none');
+    if (!initialized) return;
+    // Rebuild chart entirely when theme changes to update tooltip colors
+    buildChart();
   });
-  mutObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-access-level'] });
+  mutObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   // ─── LAZY-LOAD VIA IntersectionObserver ───────────────────────
   function setup() {

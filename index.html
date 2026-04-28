@@ -62,7 +62,9 @@
       <li><a href="#projects">[PROJECTS]</a></li>
       <li><a href="#certs">[CLEARANCE]</a></li>
       <li><a href="#attack-sim">[SIM]</a></li>
+      <li><a href="#field-notes">[LENS LOG]</a></li>
       <li><a href="#contact">[UPLINK]</a></li>
+      <li><a href="#download">[EXTRACT RESUME]</a></li>
     </ul>
     <button class="nav-live-chat-btn" id="nav-chat-open" onclick="window.openChatWidget && window.openChatWidget()" aria-label="Open live chat">
       <span class="nav-chat-dot" aria-hidden="true"></span>
@@ -71,6 +73,11 @@
     <button class="nav-terminal-btn" id="nav-terminal-btn" aria-label="Open terminal" title="Open terminal">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
       &gt;_&nbsp;TERMINAL
+    </button>
+    <button class="nav-theme-btn" id="theme-toggle" aria-label="Toggle light mode" title="Toggle light mode">
+      <span class="theme-icon-dark" aria-hidden="true">☀</span>
+      <span class="theme-icon-light" aria-hidden="true">◑</span>
+      <span class="nav-theme-label">LIGHT</span>
     </button>
     <button class="nav-audio-btn" id="audio-toggle" aria-label="Toggle audio">[AUDIO: OFF]</button>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false">
@@ -89,14 +96,22 @@
       <li><a href="#projects">5. PROJECTS</a></li>
       <li><a href="#certs">6. CLEARANCE</a></li>
       <li><a href="#awards">7. COMMENDATIONS</a></li>
-      <li><a href="#download">8. EXTRACT</a></li>
+      <li><a href="#download">8. EXTRACT RESUME</a></li>
       <li><a href="#knowledge-base">9. INTEL HUB</a></li>
       <li><a href="#attack-sim">10. ATK SIM</a></li>
-      <li><a href="#contact">11. UPLINK</a></li>
+      <li><a href="#field-notes">11. LENS LOG</a></li>
+      <li><a href="#contact">12. UPLINK</a></li>
       <li>
         <button class="mobile-chat-btn" onclick="window.openChatWidget && window.openChatWidget(); document.getElementById('mobile-menu').classList.remove('open')" aria-label="Open live chat">
           <span class="nav-chat-dot" aria-hidden="true"></span>
           LIVE CHAT — INSTANT UPLINK
+        </button>
+      </li>
+      <li>
+        <button class="mobile-theme-btn" id="mobile-theme-toggle" aria-label="Toggle light/dark mode">
+          <span class="mobile-theme-icon-dark" aria-hidden="true">☀</span>
+          <span class="mobile-theme-icon-light" aria-hidden="true">◑</span>
+          <span class="mobile-theme-label">SWITCH TO LIGHT MODE</span>
         </button>
       </li>
     </ul>
@@ -133,11 +148,7 @@
     <section id="hero" aria-label="Introduction">
       <div style="text-align:left; max-width:700px; width:100%;">
         <div class="boot-sequence" aria-live="polite">
-          <span class="boot-line">&gt; INITIALIZING SYSTEM...</span>
-          <span class="boot-line">&gt; LOADING SECURITY MODULES... <span style="color:var(--matrix-green)">OK</span></span>
-          <span class="boot-line">&gt; ESTABLISHING ENCRYPTED LINK... <span style="color:var(--matrix-green)">DONE</span></span>
-          <span class="boot-line">&gt; SYSTEM ONLINE</span>
-          <span class="boot-line">&gt; OPERATOR IDENTIFIED...</span>
+          <span class="boot-line">&gt; SECURE SESSION ESTABLISHED — <span style="color:var(--matrix-green)">OPERATOR IDENTIFIED</span></span>
           <span class="boot-cursor-blink" aria-hidden="true">&gt;_</span>
         </div>
 
@@ -162,20 +173,11 @@
       <!-- 3D Globe -->
       <div id="hero-globe-container" aria-hidden="true"></div>
 
-      <!-- HUD Bar -->
-      <div class="hero-hud-bar" aria-label="Contact information">
-        <span>&gt; COMMS: <a id="hud-email-link" href="#" style="color:var(--cyber-cyan)"><span id="hud-email"></span></a></span>
-        <span>&gt; DOSSIER: <a href="https://www.linkedin.com/in/arunjitk/" target="_blank" rel="noopener" style="color:var(--cyber-cyan)">linkedin.com/in/arunjitk</a></span>
-        <span>&gt; NODE: <a href="https://arunjitk.org" target="_blank" rel="noopener" style="color:var(--cyber-cyan)">arunjitk.org</a></span>
-      </div>
-
-      <div class="scroll-prompt" aria-hidden="true">
+<div class="scroll-prompt" aria-hidden="true">
         <span>&gt; SCROLL TO DECRYPT</span>
         <span class="chevron">▼</span>
       </div>
     </section>
-
-    <div class="section-divider"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 2 — DOSSIER
@@ -200,7 +202,7 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 3 — EXPERIENCE
@@ -326,7 +328,7 @@
       </div><!-- /timeline -->
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 4 — SKILLS MATRIX
@@ -475,7 +477,7 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 5 — TOOLS / ARMORY
@@ -505,7 +507,7 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 5B — PROJECTS
@@ -750,8 +752,6 @@
 
     </section>
 
-    <div class="section-divider"></div>
-
     <!-- ═══════════════════════════════════
          SECTION 6 — EDUCATION
     ════════════════════════════════════ -->
@@ -780,7 +780,7 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 7 — CERTIFICATIONS
@@ -820,45 +820,52 @@
           <div class="cert-name">Incident Response for Google Cloud</div>
           <div class="cert-issuer">MANDIANT</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 07</div>
           <div class="cert-name">Cyber Threat Hunting</div>
           <div class="cert-issuer">TRELLIX</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 08</div>
           <div class="cert-name">Endpoint Security HX for Analyst</div>
           <div class="cert-issuer">TRELLIX</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 09</div>
           <div class="cert-name">OSINT for Hackers and Penetration Testers</div>
           <div class="cert-issuer">EC-COUNCIL</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 10</div>
           <div class="cert-name">API Security Fundamentals</div>
           <div class="cert-issuer">APISEC UNIVERSITY</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 11</div>
           <div class="cert-name">Endpoint Detection and Response (EDR)</div>
           <div class="cert-issuer">QUALYS</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 12</div>
           <div class="cert-name">Microsoft Azure: Security Concepts</div>
           <div class="cert-issuer">LINKEDIN LEARNING</div>
         </div>
-        <div class="cert-badge reveal">
+        <div class="cert-badge reveal cert-extended">
           <div class="cert-number">CERT // 13</div>
           <div class="cert-name">ACTs FIRE-IR: Incident Response</div>
           <div class="cert-issuer">TRELLIX</div>
         </div>
+
+        <div class="certs-expand-wrap">
+          <button class="certs-expand-btn" id="certs-expand-btn" aria-expanded="false">
+            <span class="certs-expand-label">+ VIEW ALL CLEARANCES &nbsp;(13 TOTAL)</span>
+            <span class="certs-expand-label certs-collapse-label">− COLLAPSE</span>
+          </button>
+        </div>
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 8 — AWARDS
@@ -898,7 +905,7 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 8B — DOWNLOAD RESUME
@@ -947,8 +954,6 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
-
     <!-- ═══════════════════════════════════
          SECTION 8B — CYBER SECURITY HUB
     ════════════════════════════════════ -->
@@ -996,7 +1001,7 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 8C — ATTACK SIMULATION
@@ -1042,8 +1047,6 @@
       </div>
 
     </section>
-
-    <div class="section-divider"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 9 — LANGUAGES
@@ -1101,7 +1104,8 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <!-- minor: languages → interests (small adjacent sections) -->
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
          SECTION 10 — INTERESTS
@@ -1112,18 +1116,52 @@
       </div>
     </section>
 
-    <div class="section-divider"></div>
+    <!-- minor: interests → field-notes -->
+    <div class="sec-div sec-div--minor" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
-         SECTION 11 — CONTACT
+         SECTION 11 — FIELD NOTES (Photography)
+    ════════════════════════════════════ -->
+    <section id="field-notes" class="section">
+      <div class="section-label">// FIELD NOTES</div>
+      <h2 class="section-title" data-text="LENS LOG">LENS LOG</h2>
+
+      <div class="gallery-header reveal">
+        <div class="gallery-header-text">
+          <p style="font-family:var(--font-mono); font-size:0.7rem; color:var(--wb-text-dim); letter-spacing:0.1em; max-width:480px; line-height:1.7; margin:0;">
+            Frames captured off-mission — landscapes, cities, and moments from the road.<br>
+            Shot on Sony α6400 &amp; DJI Mini 3 Pro.
+          </p>
+        </div>
+        <a
+          class="gallery-ig-cta"
+          href="https://www.instagram.com/whoisarun.visuals/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View full gallery on Instagram"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          @arunjitk
+        </a>
+      </div>
+
+      <div id="gallery-grid" class="gallery-grid reveal" role="list" aria-label="Photography gallery"></div>
+    </section>
+
+    <!-- signal divider: field-notes → contact (final transition) -->
+    <div class="sec-div sec-div--signal" aria-hidden="true"><span class="sec-div__dot" aria-hidden="true"></span></div>
+
+    <!-- ═══════════════════════════════════
+         SECTION 12 — CONTACT
     ════════════════════════════════════ -->
     <section id="contact" class="section">
       <div class="section-label" data-term="contact-eyebrow">// ESTABLISH UPLINK</div>
       <h2 class="section-title" data-text="CONTACT" data-term="contact-label">CONTACT</h2>
 
       <div class="hud-panel contact-terminal reveal">
-        <div style="font-family:var(--font-hud); font-size:0.65rem; color:var(--text-dim); letter-spacing:0.2em; margin-bottom:1.5rem;">
-          &gt; ESTABLISH UPLINK ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        <div class="contact-terminal-header" aria-hidden="true">
+          <span>&gt; ESTABLISH UPLINK</span>
+          <span class="contact-terminal-header__rule" aria-hidden="true"></span>
         </div>
 
         <div class="contact-links">
@@ -1158,7 +1196,9 @@
         </div>
 
         <div class="contact-or-divider">
-          <span>&gt; — OR SEND ENCRYPTED MESSAGE ———————</span>
+          <span class="contact-or-divider__line" aria-hidden="true"></span>
+          <span class="contact-or-divider__text">&gt; OR SEND ENCRYPTED MESSAGE</span>
+          <span class="contact-or-divider__line" aria-hidden="true"></span>
         </div>
 
         <form class="contact-form" id="contact-form" novalidate>
@@ -1468,6 +1508,7 @@
   <script src="js/radar-chart.js"></script>
   <script src="js/career-gantt.js"></script>
   <script src="js/github-heatmap.js"></script>
+  <script src="js/gallery.js"></script>
 
   <!-- ═══ LIVE CHAT WIDGET ═══ -->
   <button id="chat-fab" class="chat-fab" aria-label="Open live chat" aria-expanded="false">
