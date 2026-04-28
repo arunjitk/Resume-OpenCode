@@ -1844,50 +1844,9 @@ footer {
 }
 
 /* ---------- TERMINAL FAB (launch button) ---------- */
+/* Hidden — terminal access is now via nav-terminal-btn in the header */
 #terminal-fab {
-  position: fixed;
-  bottom: 5.5rem;
-  right: 1.5rem;
-  z-index: 8500;
-  width: 44px;
-  height: 44px;
-  background: rgba(10,10,10,0.92);
-  border: 1px solid var(--wb-border-strong);
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-#terminal-fab svg { width: 20px; height: 20px; }
-#terminal-fab:hover {
-  border-color: var(--matrix-green);
-  box-shadow: 0 0 10px rgba(92,184,122,0.25);
-}
-#terminal-fab .term-fab-tooltip {
-  position: absolute;
-  right: 52px;
-  white-space: nowrap;
-  font-family: var(--font-hud);
-  font-size: 0.6rem;
-  letter-spacing: 0.12em;
-  color: var(--wb-text-dim);
-  background: rgba(10,10,10,0.9);
-  border: 1px solid var(--wb-border);
-  padding: 0.2rem 0.5rem;
-  border-radius: 2px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-#terminal-fab:hover .term-fab-tooltip { opacity: 1; }
-
-@media (max-width: 767px) {
-  #terminal-fab { bottom: 4.5rem; right: 1rem; width: 40px; height: 40px; }
-  #terminal-fab .term-fab-tooltip { display: none; }
+  display: none;
 }
 
 /* ---------- TERMINAL OVERLAY ---------- */
@@ -2161,17 +2120,18 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
   .nav-links a { font-size: 0.55rem; padding: 0.25rem 0.4rem; letter-spacing: 0.05em; }
   .nav-audio-btn { display: none; }
   .nav-live-chat-btn { display: none; }
+  .nav-terminal-btn { display: none; }
 }
 
 @media (max-width: 900px) {
   #hero {
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;   /* prevent giant gap from centering in 100vh */
+    justify-content: flex-start;   /* content stacks from top; no gap from centering */
     text-align: center;
     padding: 90px 2rem 80px;
     gap: 1rem;
-    min-height: auto;              /* let content set height on mobile */
+    min-height: 100dvh;            /* fill viewport so dossier only shows after scroll */
   }
 
   #hero > div:first-of-type { text-align: center; max-width: 100%; }
@@ -2213,10 +2173,22 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
 
 @media (max-width: 767px) {
   .nav-links, .nav-audio-btn { display: none; }
-  .nav-live-chat-btn { display: none !important; } /* override standalone definition below */
   .nav-hamburger { display: flex; }
-  /* Push hamburger to far right */
-  .nav-logo { flex: 1; }
+  /* Logo stays left; live-chat + terminal push to right before hamburger */
+  .nav-logo { flex: 0 0 auto; }
+  .nav-live-chat-btn {
+    display: flex;
+    margin-left: auto;
+    font-size: 0.58rem;
+    padding: 0.28rem 0.55rem;
+    letter-spacing: 0.08em;
+  }
+  .nav-terminal-btn {
+    display: flex;
+    font-size: 0.58rem;
+    padding: 0.28rem 0.5rem;
+    letter-spacing: 0.08em;
+  }
 
   .ascii-art { font-size: 4px; }
 
@@ -2600,6 +2572,34 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
   background: var(--wb-bg-dark);
   border-color: var(--wb-border-strong);
   box-shadow: none;
+}
+
+/* Nav terminal button — sits next to live chat */
+.nav-terminal-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--wb-border);
+  color: var(--matrix-green);
+  font-family: var(--font-hud);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  padding: 0.32rem 0.65rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-terminal-btn:hover {
+  background: rgba(92,184,122,0.08);
+  border-color: var(--matrix-green);
+  box-shadow: 0 0 8px rgba(92,184,122,0.2);
+}
+.nav-terminal-btn svg {
+  stroke: var(--matrix-green);
+  flex-shrink: 0;
 }
 
 .nav-chat-dot {
@@ -3169,7 +3169,7 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
 }
 
 .gantt-ruler-spacer {
-  width: 80px;
+  width: 90px;
   flex-shrink: 0;
 }
 
@@ -3213,16 +3213,17 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
 }
 
 .gantt-row-label {
-  width: 80px;
+  width: 90px;
+  min-width: 90px;
   flex-shrink: 0;
-  padding-right: 10px;
+  padding-right: 12px;
 }
 
 .gantt-company-abbr {
   font-family: var(--font-hud);
-  font-size: 0.55rem;
+  font-size: 0.62rem;
   letter-spacing: 0.1em;
-  color: var(--wb-text-dim);
+  color: var(--wb-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3275,6 +3276,7 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
 .gantt-bar-icon { font-size: 0.75rem; display: none; }
 
 .gantt-bar-role {
+  display: none; /* hidden globally — bars show company name (label) + years only */
   font-family: var(--font-mono);
   font-size: 0.65rem;
   color: var(--wb-text);
@@ -3284,7 +3286,14 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
   letter-spacing: 0.04em;
 }
 
+/* Hide per-bar tool chips — still shown in briefing panel (.gantt-tool-chips--full) */
+.gantt-bar .gantt-tool-chips {
+  display: none;
+}
+
+/* Full verbose date — hidden globally (briefing panel shows it separately) */
 .gantt-bar-duration {
+  display: none;
   font-family: var(--font-mono);
   font-size: 0.55rem;
   color: var(--wb-text-dim);
@@ -3293,16 +3302,16 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
   text-overflow: ellipsis;
 }
 
-/* Compact year-range shown only on mobile — hidden by default */
+/* Compact year-range "YYYY – YYYY" — shown everywhere */
 .gantt-bar-duration-short {
-  display: none;
+  display: block;
   font-family: var(--font-mono);
-  font-size: 0.52rem;
+  font-size: 0.6rem;
   color: var(--wb-text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .gantt-tool-chips {
@@ -3511,8 +3520,6 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
 @media (max-width: 900px) {
   .gantt-ruler-spacer { width: 52px; }
   .gantt-row-label    { width: 52px; }
-  .gantt-bar-role     { font-size: 0.58rem; }
-  .gantt-tool-chips   { display: none; }
 }
 
 @media (max-width: 600px) {
@@ -3526,11 +3533,9 @@ body.red-pill .section-title, body.red-pill .ascii-art { color: var(--wb-red); t
   /* Row height — shorter bars since we show less content */
   .gantt-track-area         { height: 38px; }
 
-  /* Bars: show compact year-range only — hide role title and full date string */
+  /* Bars: compact year-range only */
   .gantt-bar                { padding: 4px 6px; }
-  .gantt-bar-role           { display: none; }
-  .gantt-bar-duration       { display: none; }   /* hide "MAR 2018 — SEP 2020" */
-  .gantt-bar-duration-short { display: block; }  /* show "2018 – 2020" instead */
+  .gantt-bar-duration-short { font-size: 0.52rem; }
 
   /* Year ruler — tighten labels so they don't overlap */
   .gantt-year-label    { font-size: 0.44rem; letter-spacing: 0; }

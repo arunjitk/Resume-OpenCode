@@ -397,14 +397,17 @@
   });
 
   // Terminal FAB — click to open (mobile + desktop alternative to backtick)
-  document.getElementById('terminal-fab')?.addEventListener('click', () => {
+  function openTerminal() {
     if (!termOverlay.classList.contains('open')) {
       termOverlay.classList.add('open');
       termInput?.focus();
       termLog(null, 'ARUNJIT.K SECURE TERMINAL v1.0', 'output');
       termLog(null, 'Type "help" for available commands.', 'output');
     }
-  });
+  }
+
+  document.getElementById('terminal-fab')?.addEventListener('click', openTerminal);
+  document.getElementById('nav-terminal-btn')?.addEventListener('click', openTerminal);
 
   // ─── SKILL FILTER ─────────────────────────────────────────────
   document.querySelectorAll('.filter-btn').forEach(btn => {
