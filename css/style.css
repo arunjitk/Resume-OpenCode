@@ -3736,6 +3736,20 @@ body.light-mode .mobile-theme-label::after {
   letter-spacing: 0.04em;
 }
 
+/* Company name displayed in Gantt bars */
+.gantt-bar-company {
+  display: block;
+  font-family: var(--font-hud);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--wb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
 .gantt-tool-chips {
   display: flex;
   flex-wrap: nowrap;
@@ -3948,6 +3962,7 @@ body.light-mode .mobile-theme-label::after {
   /* Bars: compact year-range only */
   .gantt-bar                { padding: 4px 6px; }
   .gantt-bar-duration-short { font-size: 0.52rem; }
+  .gantt-bar-company        { font-size: 0.55rem; }
 
   /* Year ruler — tighten labels so they don't overlap */
   .gantt-year-label    { font-size: 0.44rem; letter-spacing: 0; }
